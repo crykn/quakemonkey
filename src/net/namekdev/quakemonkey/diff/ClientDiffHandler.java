@@ -119,7 +119,10 @@ public class ClientDiffHandler<T> extends Listener {
 			if (curPos - lm.getLabel() > numSnapshots
 					|| (lm.getLabel() - curPos > Short.MAX_VALUE / 2 && Short.MAX_VALUE
 							- lm.getLabel() + curPos > numSnapshots)) {
-				log.log(Level.INFO, "Discarding too old message: " + lm.getLabel() + " vs. cur " + curPos);
+				
+				if (log.isLoggable(Level.INFO)) {
+					log.log(Level.INFO, "Discarding too old message: " + lm.getLabel() + " vs. cur " + curPos);
+				}
 				return;
 			}
 
@@ -128,7 +131,9 @@ public class ClientDiffHandler<T> extends Listener {
 			}
 			else {
 				if (lm.getMessage() instanceof DiffMessage) {
-					log.log(Level.FINE, "Received diff of size " + Utils.messageToBuffer(message, null, kryoSerializer).limit());
+					if (log.isLoggable(Level.FINE)) {
+						log.log(Level.FINE, "Received diff of size " + Utils.messageToBuffer(message, null, kryoSerializer).limit());
+					}
 
 					DiffMessage diffMessage = (DiffMessage) message;
 
@@ -148,7 +153,9 @@ public class ClientDiffHandler<T> extends Listener {
 				listenerRegistry.dispatch(source, snapshots.get(curPos % numSnapshots));
 			} else {
 				// notify if message was old, for testing
-				log.log(Level.FINEST, "Old message received: " + lm.getLabel() + " vs. cur " + curPos);
+				if (log.isLoggable(Level.FINE)) {
+					log.log(Level.FINE, "Old message received: " + lm.getLabel() + " vs. cur " + curPos);
+				}
 			}
 
 		}

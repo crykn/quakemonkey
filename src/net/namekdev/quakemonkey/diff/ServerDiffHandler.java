@@ -81,7 +81,9 @@ public class ServerDiffHandler<T> extends Listener {
 	 */
 	public int getLag(Connection conn) {
 		if (!connectionSnapshots.containsKey(conn)) {
-			log.log(Level.WARNING, "Trying to get lag of connection that does not exist (yet).");
+			if (log.isLoggable(Level.WARNING)) {
+				log.log(Level.WARNING, "Trying to get lag of connection that does not exist (yet).");
+			}
 			return 0;
 		}
 

@@ -109,12 +109,16 @@ public class DiffConnection<T> {
 		// minutes at
 		// 60 fps).
 		if (id > ackPos || ackPos - id > Short.MAX_VALUE / 2) {
-			log.log(Level.FINER, "Client received message " + id);
+			if (log.isLoggable(Level.FINER)) {
+				log.log(Level.FINER, "Client received message " + id);
+			}
 			ackPos = id;
 			return;
 		}
 
-		log.log(Level.FINER, "Client received old message " + id);
+		if (log.isLoggable(Level.FINER)) {
+			log.log(Level.FINER, "Client received old message " + id);
+		}
 	}
 
 	/**
