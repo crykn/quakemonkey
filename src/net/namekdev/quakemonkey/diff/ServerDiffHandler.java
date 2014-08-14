@@ -11,6 +11,9 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
 import net.namekdev.quakemonkey.diff.messages.AckMessage;
+import net.namekdev.quakemonkey.diff.messages.DiffMessage;
+import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
+import net.namekdev.quakemonkey.diff.utils.BufferPool;
 
 /**
  * Handles the dispatching of messages of type {@code T} to clients, using a
@@ -64,8 +67,18 @@ public class ServerDiffHandler<T> extends Listener {
 				}
 
 				DiffConnection<T> diffConnection = connectionSnapshots.get(connection);
-				Object newMessage = diffConnection.generateSnapshot(message);
+				LabeledMessage newMessage = diffConnection.generateSnapshot(message);
 				server.sendToUDP(connection.getID(), newMessage);
+				
+				// Everything back to pools
+				if (newMessage.getMessage() instanceof DiffMessage) {
+					DiffMessage diffMessage = (DiffMessage) newMessage.getMessage();
+					
+					BufferPool.Default.saveBytes(diffMessage.getFlag());
+					BufferPool.Default.saveInts(diffMessage.getData());
+					DiffMessage.Pool.free(diffMessage);
+				}
+				LabeledMessage.Pool.free(newMessage);
 			}
 		}
 	}
