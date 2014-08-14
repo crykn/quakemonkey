@@ -5,23 +5,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.namekdev.quakemonkey.diff.DiffClassRegistration;
+import net.namekdev.quakemonkey.diff.ServerDiffHandler;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-
-import net.namekdev.quakemonkey.diff.DiffClassRegistration;
-import net.namekdev.quakemonkey.diff.ServerDiffHandler;
-
-/*
-import com.jme3.network.ConnectionListener;
-import com.jme3.network.Filters;
-import com.jme3.network.HostedConnection;
-import com.jme3.network.Network;
-import com.jme3.network.Server;
-import com.jme3.network.serializing.Serializer;
-*/
-
 
 /**
  * An example server that shows how the snapshot network code works.
@@ -39,11 +29,11 @@ public class ServerTest {
 		Kryo kryo = kryoServer.getKryo();
 		
 		DiffClassRegistration.registerClasses(kryo);
-		kryo.register(GameStateMessage.class);
+		kryo.register(GameStateMessage.class, new GameStateMessage.GameStateSerializer());
 
 		diffHandler = new ServerDiffHandler<GameStateMessage>(kryoServer);
-		kryoServer.bind(6143, 6143);
 		kryoServer.start();
+		kryoServer.bind(6143, 6143);
 
 		kryoServer.addListener(new Listener() {
 			@Override
@@ -58,15 +48,16 @@ public class ServerTest {
 			
 		});
 		
-		List<Float> or = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
+		List<Float> orientation = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
 
 		while (true) {
-			if (kryoServer.getConnections().length > 0) {
+			Connection[] connections = kryoServer.getConnections();
+			if (connections.length > 0) {
 				List<Float> newPos = new ArrayList<Float>(
 					Arrays.asList(new Float[] { (float) serverTicks, 8.0f, 3.0f })
 				);
 
-				GameStateMessage newMessage = new GameStateMessage("test", newPos, or, (byte) 0);
+				GameStateMessage newMessage = new GameStateMessage("test", newPos, orientation, (byte) 0);
 
 				/* Dispatch same message to all clients */
 				diffHandler.dispatchMessage(kryoServer,	kryoServer.getConnections(), newMessage);

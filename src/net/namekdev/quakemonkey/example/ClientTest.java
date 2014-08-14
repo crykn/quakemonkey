@@ -2,21 +2,13 @@ package net.namekdev.quakemonkey.example;
 
 import java.io.IOException;
 
+import net.namekdev.quakemonkey.diff.ClientDiffHandler;
+import net.namekdev.quakemonkey.diff.DiffClassRegistration;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
-
-
-/*
-import com.jme3.network.Client;
-import com.jme3.network.Message;
-import com.jme3.network.MessageListener;
-import com.jme3.network.Network;
-import com.jme3.network.serializing.Serializer;
-*/
-import net.namekdev.quakemonkey.diff.ClientDiffHandler;
-import net.namekdev.quakemonkey.diff.DiffClassRegistration;
 
 /**
  * An example client that shows how the snapshot network code works.
@@ -32,14 +24,14 @@ public class ClientTest extends Listener {
 		
 		Kryo kryo = kryoClient.getKryo();
 		DiffClassRegistration.registerClasses(kryo);
-		kryo.register(GameStateMessage.class);
+		kryo.register(GameStateMessage.class, new GameStateMessage.GameStateSerializer());
 		
-		kryoClient.connect(10000000, "localhost", 6143);
+		kryoClient.start();
+		kryoClient.connect(1000, "localhost", 6143, 6143);
 		
 		diffHandler = new ClientDiffHandler<GameStateMessage>(kryoClient, GameStateMessage.class, (short)30);
 		diffHandler.addListener(this); // register listener for GameStateMessage
 		
-		kryoClient.start();
 		
 		try {
 			Thread.sleep(10000000);
@@ -53,6 +45,16 @@ public class ClientTest extends Listener {
 	
 	public static void main(String[] args) throws IOException {
 		new ClientTest();
+	}
+	
+	@Override
+	public void connected(Connection connection) {
+		System.out.println("Connected to server.");
+	}
+
+	@Override
+	public void disconnected(Connection connection) {
+		System.out.println("Disconnected from server.");
 	}
 
 	@Override
