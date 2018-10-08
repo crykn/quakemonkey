@@ -19,8 +19,8 @@ public class DiffClassRegistration {
 	 * Registers the messages that are required for the snapshot protocol, for
 	 * both the server and the client. Make <b>absolutely</b> sure that this
 	 * function is called before creation of the server and the client and that
-	 * the position in the code relative to other
-	 * {@link Serializer.registerClass} calls is the same.
+	 * the position in the code relative to other {@link Kryo#register(Class)}
+	 * calls is the same.
 	 */
 	public static void registerClasses(Kryo kryoSerializer) {
 		kryoSerializer.register(DiffMessage.class, new DiffMessageSerializer());

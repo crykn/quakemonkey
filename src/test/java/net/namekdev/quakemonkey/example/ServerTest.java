@@ -65,8 +65,7 @@ public class ServerTest {
 						newPos, orientation, (byte) 0);
 
 				/* Dispatch same message to all clients */
-				diffHandler.dispatchMessage(kryoServer,
-						kryoServer.getConnections(), newMessage);
+				diffHandler.dispatchMessageToAll(newMessage);
 
 				// send a message that is old (id=1), see what happens
 				// myServer.broadcast(new LabeledMessage((short)1, newMessage));

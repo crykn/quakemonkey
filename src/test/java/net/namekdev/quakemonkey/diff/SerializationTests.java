@@ -35,7 +35,7 @@ public class SerializationTests {
 		kryoSerializer.register(GameStateMessage.class);
 
 		// First server side
-		DiffConnection<GameStateMessage> diffConnection = new DiffConnection<GameStateMessage>(
+		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
 				kryoSerializer, (short) 20);
 		List<Float> position = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
 		List<Float> orientation = Arrays.asList(new Float[] { 0f, 0f, 1f });
@@ -58,7 +58,7 @@ public class SerializationTests {
 				});
 
 		// will call listener above
-		clientDiffHandler.accept(fakeClient, messageToSend);
+		clientDiffHandler.processMessage(fakeClient, messageToSend);
 	}
 
 	/**
@@ -75,7 +75,7 @@ public class SerializationTests {
 		DiffClassRegistration.registerClasses(kryoSerializer);
 		kryoSerializer.register(GameStateMessage.class);
 
-		DiffConnection<GameStateMessage> diffConnection = new DiffConnection<GameStateMessage>(
+		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
 				kryoSerializer, (short) 20, true);
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
 				fakeClient, GameStateMessage.class, (short) 30);
@@ -99,7 +99,7 @@ public class SerializationTests {
 		// Client acknowledges first message.
 		// should be: fakeClient.sendUDP(new
 		// AckMessage(firstMessage.getLabel()));
-		clientDiffHandler.accept(fakeClient, firstMessage);
+		clientDiffHandler.processMessage(fakeClient, firstMessage);
 		diffConnection.registerAck(firstMessage.getLabel());
 
 		// Server sends second gamestate (Orientation: 1 0 1)
@@ -138,7 +138,7 @@ public class SerializationTests {
 					}
 				});
 		// will call listener above
-		clientDiffHandler.accept(fakeClient, messageReceived);
+		clientDiffHandler.processMessage(fakeClient, messageReceived);
 	}
 
 	@DefaultSerializer(GameStateMessage.GameStateSerializer.class)

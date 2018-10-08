@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 public class BufferPool {
-	public static final BufferPool Default = new BufferPool();
+	public static final BufferPool DEFAULT = new BufferPool();
 
 	private final DuplicatedKeysTreeMap<Integer, byte[]> _byteArrayPool = new DuplicatedKeysTreeMap<Integer, byte[]>();
 	private final DuplicatedKeysTreeMap<Integer, int[]> _intArrayPool = new DuplicatedKeysTreeMap<Integer, int[]>();

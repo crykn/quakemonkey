@@ -9,22 +9,18 @@ import net.namekdev.quakemonkey.diff.utils.Pool;
  * @author Ben Ruijl
  */
 public class DiffMessage {
-	public static final Pool<DiffMessage> Pool = new Pool<DiffMessage>(
-			new Pool.ObjectServicer<DiffMessage>() {
+	public static final Pool<DiffMessage> POOL = new Pool<DiffMessage>(
+			new Pool.ObjectSupplier<DiffMessage>() {
 				@Override
 				public DiffMessage onCreate() {
 					return new DiffMessage();
 				}
 
 				@Override
-				public void onGet(DiffMessage obj) {
-				}
-
-				@Override
 				public void onFree(DiffMessage obj) {
 					obj.messageId = (byte) 0;
 					obj.data = null;
-					obj.flag = null;
+					obj.flags = null;
 				}
 			});
 
@@ -32,16 +28,17 @@ public class DiffMessage {
 	 * ID of the message the diff is from.
 	 */
 	private short messageId;
-	private byte[] flag;
+	private byte[] flags;
 	private int[] data;
 
 	public DiffMessage() {
+		// default public constructor
 	}
 
 	public DiffMessage(short messageId, byte[] flag, int[] data) {
 		this.messageId = messageId;
 		this.data = data;
-		this.flag = flag;
+		this.flags = flag;
 	}
 
 	public short getMessageId() {
@@ -53,7 +50,7 @@ public class DiffMessage {
 	}
 
 	public byte[] getFlag() {
-		return flag;
+		return flags;
 	}
 
 	/**
@@ -61,7 +58,7 @@ public class DiffMessage {
 	 */
 	public DiffMessage set(short id, byte[] flag, int[] data) {
 		this.messageId = id;
-		this.flag = flag;
+		this.flags = flag;
 		this.data = data;
 
 		return this;

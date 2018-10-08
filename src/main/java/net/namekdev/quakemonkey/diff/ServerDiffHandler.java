@@ -3,13 +3,12 @@ package net.namekdev.quakemonkey.diff;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
+import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.diff.messages.AckMessage;
 import net.namekdev.quakemonkey.diff.messages.DiffMessage;
@@ -30,19 +29,22 @@ import net.namekdev.quakemonkey.diff.utils.BufferPool;
  * @see #ClientDiffHandler
  */
 public class ServerDiffHandler<T> implements Listener {
-	protected static final Logger log = Logger
+	protected static final Logger LOG = Logger
 			.getLogger(ServerDiffHandler.class.getName());
-	private final Kryo kryoSerializer;
+	private final Server server;
 	private final short numHistory;
-	private final Map<Connection, DiffConnection<T>> connectionSnapshots;
+	private final Map<Connection, DiffConnectionHandler<T>> diffConnections;
 	private final boolean alwaysSendDiffs;
 
 	public ServerDiffHandler(Server server, short numHistory,
 			boolean alwaysSendDiffs) {
-		this.kryoSerializer = server.getKryo();
+		Preconditions.checkNotNull(server);
+		Preconditions.checkArgument(numHistory >= 1);
+
+		this.server = server;
 		this.numHistory = numHistory;
 		this.alwaysSendDiffs = alwaysSendDiffs;
-		connectionSnapshots = new HashMap<Connection, DiffConnection<T>>();
+		diffConnections = new HashMap<Connection, DiffConnectionHandler<T>>();
 
 		server.addListener(this);
 	}
@@ -59,37 +61,46 @@ public class ServerDiffHandler<T> implements Listener {
 		this(server, false);
 	}
 
+	public void dispatchMessageToAll(T msg) {
+		for (Connection connection : server.getConnections()) {
+			dispatchMessageToConnection(connection, msg);
+		}
+	}
+
 	/**
 	 * Dispatches a message to all clients in the filter.
 	 */
-	public void dispatchMessage(Server server,
-			Collection<Connection> connections, T message) {
+	public void dispatchMessageToConnections(Collection<Connection> recipients,
+			T msg) {
 		for (Connection connection : server.getConnections()) {
-			if (connections.contains(connection)) { // FIXME Reference
+			if (recipients.contains(connection)) { // FIXME Reference
 													// comparison (?)
-				if (!connectionSnapshots.containsKey(connection)) {
-					connectionSnapshots.put(connection, new DiffConnection<T>(
-							kryoSerializer, numHistory, alwaysSendDiffs));
-				}
-
-				DiffConnection<T> diffConnection = connectionSnapshots
-						.get(connection);
-				LabeledMessage newMessage = diffConnection
-						.generateSnapshot(message);
-				server.sendToUDP(connection.getID(), newMessage);
-
-				// Everything back to pools
-				if (newMessage.getMessage() instanceof DiffMessage) {
-					DiffMessage diffMessage = (DiffMessage) newMessage
-							.getMessage();
-
-					BufferPool.Default.saveBytes(diffMessage.getFlag());
-					BufferPool.Default.saveInts(diffMessage.getData());
-					DiffMessage.Pool.free(diffMessage);
-				}
-				LabeledMessage.Pool.free(newMessage);
+				dispatchMessageToConnection(connection, msg);
 			}
 		}
+	}
+
+	private void dispatchMessageToConnection(Connection connection, T msg) {
+		if (!diffConnections.containsKey(connection)) {
+			diffConnections.put(connection, new DiffConnectionHandler<T>(
+					server.getKryo(), numHistory, alwaysSendDiffs));
+		}
+
+		DiffConnectionHandler<T> diffConnection = diffConnections
+				.get(connection);
+		LabeledMessage newMessage = diffConnection.generateSnapshot(msg);
+		server.sendToUDP(connection.getID(), newMessage);
+
+		// Everything back to pools
+		if (newMessage.getPayloadMessage() instanceof DiffMessage) {
+			DiffMessage diffMessage = (DiffMessage) newMessage
+					.getPayloadMessage();
+
+			BufferPool.DEFAULT.saveBytes(diffMessage.getFlag());
+			BufferPool.DEFAULT.saveInts(diffMessage.getData());
+			DiffMessage.POOL.free(diffMessage);
+		}
+		LabeledMessage.POOL.free(newMessage);
 	}
 
 	/**
@@ -102,26 +113,23 @@ public class ServerDiffHandler<T> implements Listener {
 	 * @return Connection lag
 	 */
 	public int getLag(Connection conn) {
-		if (!connectionSnapshots.containsKey(conn)) {
-			if (log.isLoggable(Level.WARNING)) {
-				log.log(Level.WARNING,
-						"Trying to get lag of connection that does not exist (yet).");
-			}
-			return 0;
+		if (!diffConnections.containsKey(conn)) {
+			throw new IllegalStateException(
+					"Trying to get lag of connection that does not exist (yet).");
 		}
 
-		return connectionSnapshots.get(conn).getLag();
+		return diffConnections.get(conn).getLag();
 	}
 
 	@Override
 	public void disconnected(Connection connection) {
-		connectionSnapshots.remove(connection);
+		diffConnections.remove(connection);
 	}
 
 	@Override
 	public void received(Connection con, Object m) {
-		if (m instanceof AckMessage && connectionSnapshots.containsKey(con)) {
-			DiffConnection<T> diffConnection = connectionSnapshots.get(con);
+		if (m instanceof AckMessage && diffConnections.containsKey(con)) {
+			DiffConnectionHandler<T> diffConnection = diffConnections.get(con);
 			diffConnection.registerAck(((AckMessage) m).getId());
 		}
 	}

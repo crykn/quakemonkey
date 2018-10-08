@@ -12,7 +12,7 @@ class Utils {
 			Kryo kryoSerializer) {
 		// Could let the caller pass their own in
 		ByteBuffer buffer = target == null
-				? BufferPool.Default.obtainByteBuffer(32767 + 2)
+				? BufferPool.DEFAULT.obtainByteBuffer(32767 + 2)
 				: target;
 
 		Output output = new Output(buffer.array());

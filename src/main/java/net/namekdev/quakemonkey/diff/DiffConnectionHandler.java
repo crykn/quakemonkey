@@ -8,11 +8,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.google.common.annotations.VisibleForTesting;
 
 import net.namekdev.quakemonkey.diff.messages.DiffMessage;
 import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
 import net.namekdev.quakemonkey.diff.utils.BufferPool;
-import net.namekdev.quakemonkey.diff.utils.Pool;
 
 /**
  * The server-side handler of generating delta messages for one connection. It
@@ -24,9 +24,9 @@ import net.namekdev.quakemonkey.diff.utils.Pool;
  * @param <T>
  *            Message type
  */
-public class DiffConnection<T> {
-	protected static final Logger log = Logger
-			.getLogger(DiffConnection.class.getName());
+public class DiffConnectionHandler<T> {
+	protected static final Logger lOG = Logger
+			.getLogger(DiffConnectionHandler.class.getName());
 	private final Kryo kryoSerializer;
 	private final short numSnapshots;
 	private final List<T> snapshots;
@@ -34,19 +34,21 @@ public class DiffConnection<T> {
 	private short ackPos;
 
 	/**
-	 * If set to false, then size of full message and message diff is compared;
-	 * based on that the smaller message is being sent.
+	 * If set to <code>false</code>, then the size of the full message and the
+	 * message diff is compared; based on that the smaller message is being
+	 * sent.
 	 * 
-	 * If set to true, then message diff is being sent instead of full message.
+	 * If set to <code>true</code>, then the message diff is always being sent
+	 * instead of the full message.
 	 */
 	private final boolean alwaysSendDiff;
 
-	public DiffConnection(Kryo kryoSerializer, short numSnapshots,
+	public DiffConnectionHandler(Kryo kryoSerializer, short numSnapshots,
 			boolean alwaysSendDiff) {
 		this.kryoSerializer = kryoSerializer;
 		this.numSnapshots = numSnapshots;
 		this.alwaysSendDiff = alwaysSendDiff;
-		snapshots = new ArrayList<T>(numSnapshots);
+		snapshots = new ArrayList<>(numSnapshots);
 
 		for (int i = 0; i < numSnapshots; i++) {
 			snapshots.add(null);
@@ -56,7 +58,7 @@ public class DiffConnection<T> {
 		ackPos = -1;
 	}
 
-	public DiffConnection(Kryo kryoSerializer, short numSnapshots) {
+	public DiffConnectionHandler(Kryo kryoSerializer, short numSnapshots) {
 		this(kryoSerializer, numSnapshots, false);
 	}
 
@@ -68,7 +70,8 @@ public class DiffConnection<T> {
 	 *            Message to add to snapshot list
 	 * @return {@code message} or a delta message
 	 */
-	public LabeledMessage generateSnapshot(T message) {
+	@VisibleForTesting
+	LabeledMessage generateSnapshot(T message) {
 		short oldPos = curPos;
 		snapshots.set((short) (oldPos % numSnapshots), message);
 		curPos++;
@@ -79,18 +82,18 @@ public class DiffConnection<T> {
 		}
 
 		if (ackPos < 0) {
-			return LabeledMessage.Pool.obtain().set(oldPos, message);
+			return LabeledMessage.POOL.obtain().set(oldPos, message);
 		}
 
 		/* Is the last received message too old? Send a full one */
 		if (oldPos - ackPos > numSnapshots
 				|| (ackPos - oldPos > Short.MAX_VALUE / 2
 						&& Short.MAX_VALUE - ackPos + oldPos > numSnapshots)) {
-			return LabeledMessage.Pool.obtain().set(oldPos, message);
+			return LabeledMessage.POOL.obtain().set(oldPos, message);
 		}
 
 		T oldMessage = snapshots.get(ackPos % numSnapshots);
-		return LabeledMessage.Pool.obtain().set(oldPos,
+		return LabeledMessage.POOL.obtain().set(oldPos,
 				generateDelta(message, oldMessage, ackPos));
 	}
 
@@ -109,35 +112,35 @@ public class DiffConnection<T> {
 
 	public void registerAck(short id) {
 		// because the array is cyclic, the id could be in front of the old
-		// ackPos,
-		// so we check if the difference between the two is very large ( > 4
-		// minutes at
-		// 60 fps).
+		// ackPos, so we check if the difference between the two is very large (
+		// > 4 minutes at 60 fps).
 		if (id > ackPos || ackPos - id > Short.MAX_VALUE / 2) {
-			if (log.isLoggable(Level.FINER)) {
-				log.log(Level.FINER, "Client received message " + id);
+			if (lOG.isLoggable(Level.FINER)) {
+				lOG.log(Level.FINER, "Client received message " + id);
 			}
 			ackPos = id;
 			return;
 		}
 
-		if (log.isLoggable(Level.FINER)) {
-			log.log(Level.FINER, "Client received old message " + id);
+		if (lOG.isLoggable(Level.FINER)) {
+			lOG.log(Level.FINER, "Client received old message " + id);
 		}
 	}
 
 	/**
-	 * Returns a delta message from message and prevMessage or just message if
-	 * that happens to be smaller.
+	 * Returns a delta message from <code>message</code> and
+	 * <code>prevMessage</code> or just <code>message</code> if that happens to
+	 * be smaller.
 	 * 
 	 * @param message
 	 *            Message to send
 	 * @param prevMessage
 	 *            Previous message
 	 * @return
+	 * @see #alwaysSendDiff
 	 */
 	private Object generateDelta(T message, T prevMessage, short prevID) {
-		BufferPool pool = BufferPool.Default;
+		BufferPool pool = BufferPool.DEFAULT;
 
 		ByteBuffer old = Utils.messageToBuffer(prevMessage, null,
 				kryoSerializer);
@@ -154,7 +157,7 @@ public class DiffConnection<T> {
 		// check block of size int
 		int numBits = intBound / 4;
 		int numBytes = (numBits - 1) / 8 + 1;
-		byte[] flag = BufferPool.Default.obtainBytes(numBytes);
+		byte[] flag = BufferPool.DEFAULT.obtainBytes(numBytes);
 
 		// also works if old and new are not the same size, but less efficiently
 		int i = 0;
@@ -172,13 +175,13 @@ public class DiffConnection<T> {
 		/* Check what is smaller, delta message or original buffer */
 		Object retMessage = null;
 
-		// TODO: fix numbers to be more accurate
+		// TODO fix numbers to be more accurate
 		if (alwaysSendDiff || diffInts.remaining() * 4 + 8 < buffer.limit()) {
 			int diffDataSize = diffInts.remaining();
 			int[] diffData = pool.obtainInts(diffDataSize, true);
 			diffInts.get(diffData, 0, diffDataSize);
 
-			retMessage = DiffMessage.Pool.obtain().set(prevID, flag, diffData);
+			retMessage = DiffMessage.POOL.obtain().set(prevID, flag, diffData);
 		} else {
 			retMessage = message;
 		}

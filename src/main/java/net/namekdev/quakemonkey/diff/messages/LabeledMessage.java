@@ -8,15 +8,11 @@ import net.namekdev.quakemonkey.diff.utils.Pool;
  * @author Ben Ruijl
  */
 public class LabeledMessage {
-	public static final Pool<LabeledMessage> Pool = new Pool<LabeledMessage>(
-			new Pool.ObjectServicer<LabeledMessage>() {
+	public static final Pool<LabeledMessage> POOL = new Pool<LabeledMessage>(
+			new Pool.ObjectSupplier<LabeledMessage>() {
 				@Override
 				public LabeledMessage onCreate() {
 					return new LabeledMessage();
-				}
-
-				@Override
-				public void onGet(LabeledMessage obj) {
 				}
 
 				@Override
@@ -30,6 +26,7 @@ public class LabeledMessage {
 	private Object message;
 
 	public LabeledMessage() {
+		// default public constructor
 	}
 
 	public LabeledMessage(short label, Object message) {
@@ -41,7 +38,7 @@ public class LabeledMessage {
 		return label;
 	}
 
-	public Object getMessage() {
+	public Object getPayloadMessage() {
 		return message;
 	}
 

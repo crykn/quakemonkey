@@ -4,21 +4,17 @@ import net.namekdev.quakemonkey.diff.utils.Pool;
 
 /**
  * An acknowledgment message that is sent from the client to the server. It
- * contains and identifier of the message that was received.
+ * contains an {@linkplain #id identifier} of the message that was received.
  * 
  * @author Ben Ruijl
  * 
  */
 public class AckMessage {
-	public static final Pool<AckMessage> Pool = new Pool<AckMessage>(
-			new Pool.ObjectServicer<AckMessage>() {
+	public static final Pool<AckMessage> POOL = new Pool<AckMessage>(
+			new Pool.ObjectSupplier<AckMessage>() {
 				@Override
 				public AckMessage onCreate() {
 					return new AckMessage();
-				}
-
-				@Override
-				public void onGet(AckMessage obj) {
 				}
 
 				@Override
@@ -30,6 +26,7 @@ public class AckMessage {
 	private short id;
 
 	public AckMessage() {
+		// default public constructor
 	}
 
 	public AckMessage(short id) {

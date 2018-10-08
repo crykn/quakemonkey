@@ -12,5 +12,6 @@ repositories {
 
 dependencies {
     compile "com.github.crykn:kryonet:2.22.3"
+    compile "com.google.guava:guava:26.0-jre"
     testCompile "junit:junit:4.12"
 }
