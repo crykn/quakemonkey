@@ -104,7 +104,7 @@ public class ClientDiffHandler<T> {
 		newBuffer.put(oldBuffer);
 		newBuffer.position(0);
 
-		BufferPool.DEFAULT.saveByteBuffer(oldBuffer);
+		BufferPool.DEFAULT.freeByteBuffer(oldBuffer);
 
 		byte[] diffFlags = diffMessage.getFlag();
 		int[] diffData = diffMessage.getData();
@@ -121,7 +121,7 @@ public class ClientDiffHandler<T> {
 		input.setPosition(2); // skip size
 		Object obj = kryoSerializer.readClassAndObject(input);
 
-		BufferPool.DEFAULT.saveByteBuffer(newBuffer);
+		BufferPool.DEFAULT.freeByteBuffer(newBuffer);
 
 		return (T) obj;
 	}
@@ -158,7 +158,7 @@ public class ClientDiffHandler<T> {
 						msg.getPayloadMessage(), null, kryoSerializer);
 				LOG.log(Level.FINE,
 						"Received diff of size " + logBuffer.limit());
-				BufferPool.DEFAULT.saveByteBuffer(logBuffer);
+				BufferPool.DEFAULT.freeByteBuffer(logBuffer);
 			}
 
 			DiffMessage diffMessage = (DiffMessage) msg.getPayloadMessage();

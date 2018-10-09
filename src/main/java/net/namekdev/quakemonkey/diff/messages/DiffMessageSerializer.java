@@ -16,7 +16,7 @@ public class DiffMessageSerializer extends Serializer<DiffMessage> {
 	public DiffMessage read(Kryo kryo, Input input,
 			Class<? extends DiffMessage> type) {
 		short messageID = input.readShort();
-		int flagSize = input.readShort();
+		short flagSize = input.readShort();
 
 		byte[] flags = new byte[flagSize];
 		input.readBytes(flags, 0, flagSize);
@@ -28,9 +28,8 @@ public class DiffMessageSerializer extends Serializer<DiffMessage> {
 			}
 		}
 
-		int[] val = input.readInts(intCount);
-
-		return DiffMessage.POOL.obtain().set(messageID, flags, val);
+		return DiffMessage.POOL.obtain().set(messageID, flags,
+				input.readInts(intCount));
 	}
 
 	@Override
@@ -39,10 +38,9 @@ public class DiffMessageSerializer extends Serializer<DiffMessage> {
 		output.writeShort((short) diff.getFlag().length);
 		output.write(diff.getFlag());
 
-		for (int i = 0; i < diff.getData().length; i++) // TODO write in bulk
-			output.writeInt(diff.getData()[i]);
+		output.writeInts(diff.getData(), 0, diff.getData().length);
 
-		output.setPosition(output.position() + diff.getData().length * 4);
+		// output.setPosition(output.position() + diff.getData().length * 4);
 	}
 
 }

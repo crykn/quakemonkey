@@ -140,32 +140,33 @@ public class DiffConnectionHandler<T> {
 	 * @see #alwaysSendDiff
 	 */
 	private Object generateDelta(T message, T prevMessage, short prevID) {
-		BufferPool pool = BufferPool.DEFAULT;
-
-		ByteBuffer old = Utils.messageToBuffer(prevMessage, null,
+		ByteBuffer previousBuffer = Utils.messageToBuffer(prevMessage, null,
 				kryoSerializer);
 		ByteBuffer buffer = Utils.messageToBuffer(message, null,
 				kryoSerializer);
 
 		int intBound = (int) (Math.ceil(buffer.remaining() / 4)) * 4;
-		old.limit(intBound);
+		previousBuffer.limit(intBound);
 		buffer.limit(intBound); // set buffers to be the same size
 
-		IntBuffer diffInts = pool.obtainIntBuffer(buffer.limit()); // great
-																	// overestimation
+		IntBuffer diffInts = BufferPool.DEFAULT.obtainIntBuffer(buffer.limit()); // great
+		// overestimation
 
 		// check block of size int
 		int numBits = intBound / 4;
 		int numBytes = (numBits - 1) / 8 + 1;
-		byte[] flag = BufferPool.DEFAULT.obtainBytes(numBytes);
+		byte[] flag = BufferPool.DEFAULT.obtainByteArray(numBytes);
 
 		// also works if old and new are not the same size, but less efficiently
 		int i = 0;
 		while (buffer.remaining() >= 4) {
 			int val = buffer.getInt();
-			if (old.remaining() < 4 || val != old.getInt()) {
+			if (previousBuffer.remaining() < 4
+					|| val != previousBuffer.getInt()) {
 				diffInts.put(val);
 				flag[i / 8] |= 1 << (i % 8);
+			} else {
+				flag[i / 8] &= ~(1 << (i % 8));
 			}
 			i++;
 		}
@@ -175,10 +176,12 @@ public class DiffConnectionHandler<T> {
 		/* Check what is smaller, delta message or original buffer */
 		Object retMessage = null;
 
-		// TODO fix numbers to be more accurate
+		// TODO fix size calculation to be more accurate
 		if (alwaysSendDiff || diffInts.remaining() * 4 + 8 < buffer.limit()) {
 			int diffDataSize = diffInts.remaining();
-			int[] diffData = pool.obtainInts(diffDataSize, true);
+			int[] diffData = BufferPool.DEFAULT.obtainIntArray(diffDataSize,
+					true);
+
 			diffInts.get(diffData, 0, diffDataSize);
 
 			retMessage = DiffMessage.POOL.obtain().set(prevID, flag, diffData);
@@ -186,9 +189,9 @@ public class DiffConnectionHandler<T> {
 			retMessage = message;
 		}
 
-		pool.saveByteBuffer(old);
-		pool.saveByteBuffer(buffer);
-		pool.saveIntBuffer(diffInts);
+		BufferPool.DEFAULT.freeByteBuffer(previousBuffer);
+		BufferPool.DEFAULT.freeByteBuffer(buffer);
+		BufferPool.DEFAULT.freeIntBuffer(diffInts);
 
 		return retMessage;
 	}
