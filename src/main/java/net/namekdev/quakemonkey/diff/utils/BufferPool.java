@@ -37,6 +37,9 @@ public class BufferPool {
 	}
 
 	public void freeByteArray(byte[] array) {
+		if (array == null)
+			return;
+		
 		synchronized (_byteArrayPool) {
 			_byteArrayPool.put(array.length, array);
 		}
@@ -61,6 +64,9 @@ public class BufferPool {
 	}
 
 	public void freeIntArray(int[] array) {
+		if (array == null)
+			return;
+		
 		synchronized (_intArrayPool) {
 			_intArrayPool.put(array.length, array);
 		}
@@ -85,6 +91,8 @@ public class BufferPool {
 	}
 
 	public void freeByteBuffer(ByteBuffer buffer) {
+		if (buffer == null)
+			return;
 		synchronized (_byteBufferPool) {
 			buffer.clear();
 			_byteBufferPool.put(buffer.capacity(), buffer);
@@ -110,6 +118,9 @@ public class BufferPool {
 	}
 
 	public void freeIntBuffer(IntBuffer buffer) {
+		if (buffer == null)
+			return;
+		
 		synchronized (_intBufferPool) {
 			buffer.clear();
 			_intBufferPool.put(buffer.capacity(), buffer);

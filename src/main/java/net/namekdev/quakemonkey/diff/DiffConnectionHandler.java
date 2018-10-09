@@ -2,8 +2,6 @@ package net.namekdev.quakemonkey.diff;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +27,7 @@ public class DiffConnectionHandler<T> {
 			.getLogger(DiffConnectionHandler.class.getName());
 	private final Kryo kryoSerializer;
 	private final short numSnapshots;
-	private final List<T> snapshots;
+	private final ByteBuffer[] snapshots;
 	private short curPos; // position in cyclic array
 	private short ackPos;
 
@@ -48,10 +46,10 @@ public class DiffConnectionHandler<T> {
 		this.kryoSerializer = kryoSerializer;
 		this.numSnapshots = numSnapshots;
 		this.alwaysSendDiff = alwaysSendDiff;
-		snapshots = new ArrayList<>(numSnapshots);
+		snapshots = new ByteBuffer[numSnapshots];
 
 		for (int i = 0; i < numSnapshots; i++) {
-			snapshots.add(null);
+			snapshots[i] = null;
 		}
 
 		curPos = 0;
@@ -73,7 +71,11 @@ public class DiffConnectionHandler<T> {
 	@VisibleForTesting
 	LabeledMessage generateSnapshot(T message) {
 		short oldPos = curPos;
-		snapshots.set((short) (oldPos % numSnapshots), message);
+
+		int index = oldPos % numSnapshots;
+		BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
+		ByteBuffer newMessage = snapshots[index] = Utils
+				.messageToBuffer(message, null, kryoSerializer);
 		curPos++;
 
 		// only allow positive positions
@@ -92,9 +94,12 @@ public class DiffConnectionHandler<T> {
 			return LabeledMessage.POOL.obtain().set(oldPos, message);
 		}
 
-		T oldMessage = snapshots.get(ackPos % numSnapshots);
+		ByteBuffer lastAckMessage = snapshots[ackPos % numSnapshots];
+
+		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
+
 		return LabeledMessage.POOL.obtain().set(oldPos,
-				generateDelta(message, oldMessage, ackPos));
+				delta == null ? message : delta);
 	}
 
 	/**
@@ -139,12 +144,8 @@ public class DiffConnectionHandler<T> {
 	 * @return
 	 * @see #alwaysSendDiff
 	 */
-	private Object generateDelta(T message, T prevMessage, short prevID) {
-		ByteBuffer previousBuffer = Utils.messageToBuffer(prevMessage, null,
-				kryoSerializer);
-		ByteBuffer buffer = Utils.messageToBuffer(message, null,
-				kryoSerializer);
-
+	private Object generateDelta(ByteBuffer buffer, ByteBuffer previousBuffer,
+			short prevID) {
 		int intBound = (int) (Math.ceil(buffer.remaining() / 4)) * 4;
 		previousBuffer.limit(intBound);
 		buffer.limit(intBound); // set buffers to be the same size
@@ -186,11 +187,9 @@ public class DiffConnectionHandler<T> {
 
 			retMessage = DiffMessage.POOL.obtain().set(prevID, flag, diffData);
 		} else {
-			retMessage = message;
+			retMessage = null;
 		}
 
-		BufferPool.DEFAULT.freeByteBuffer(previousBuffer);
-		BufferPool.DEFAULT.freeByteBuffer(buffer);
 		BufferPool.DEFAULT.freeIntBuffer(diffInts);
 
 		return retMessage;

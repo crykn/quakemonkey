@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.example;
+package net.namekdev.quakemonkey.diff;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,48 @@ public class GameStateMessage {
 
 	public byte getId() {
 		return id;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result
+				+ ((orientation == null) ? 0 : orientation.hashCode());
+		result = prime * result
+				+ ((position == null) ? 0 : position.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		GameStateMessage other = (GameStateMessage) obj;
+		if (id != other.id)
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (orientation == null) {
+			if (other.orientation != null)
+				return false;
+		} else if (!orientation.equals(other.orientation))
+			return false;
+		if (position == null) {
+			if (other.position != null)
+				return false;
+		} else if (!position.equals(other.position))
+			return false;
+		return true;
 	}
 
 	@Override

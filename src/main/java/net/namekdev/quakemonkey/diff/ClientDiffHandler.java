@@ -1,8 +1,6 @@
 package net.namekdev.quakemonkey.diff;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,7 +43,7 @@ public class ClientDiffHandler<T> {
 	private final Kryo kryoSerializer;
 	private final short numSnapshots;
 	private final Class<T> cls;
-	private final List<T> snapshots;
+	private final ByteBuffer[] snapshots;
 	private final BiConsumerMultiplexer<Connection, T> listeners;
 	private short curPos;
 
@@ -59,10 +57,10 @@ public class ClientDiffHandler<T> {
 		this.cls = cls;
 
 		listeners = new BiConsumerMultiplexer<>();
-		snapshots = new ArrayList<>(numSnapshots);
+		snapshots = new ByteBuffer[numSnapshots];
 
 		for (int i = 0; i < numSnapshots; i++) {
-			snapshots.add(null);
+			snapshots[i] = null;
 		}
 
 		client.addListener(new Listener() { // don't use a TypeListener for
@@ -93,18 +91,13 @@ public class ClientDiffHandler<T> {
 	 *            The delta message
 	 * @return A new message of type {@code T}. May be <code>null</code>.
 	 */
-	@SuppressWarnings("unchecked")
-	private T mergeMessage(T oldMessage, DiffMessage diffMessage) {
-		ByteBuffer oldBuffer = Utils.messageToBuffer(oldMessage, null,
-				kryoSerializer);
-
+	private ByteBuffer mergeMessage(ByteBuffer oldMessage,
+			DiffMessage diffMessage) {
 		// Copy old message
 		ByteBuffer newBuffer = BufferPool.DEFAULT
 				.obtainByteBuffer(Short.MAX_VALUE);
-		newBuffer.put(oldBuffer);
+		newBuffer.put(oldMessage);
 		newBuffer.position(0);
-
-		BufferPool.DEFAULT.freeByteBuffer(oldBuffer);
 
 		byte[] diffFlags = diffMessage.getFlag();
 		int[] diffData = diffMessage.getData();
@@ -117,13 +110,7 @@ public class ClientDiffHandler<T> {
 			}
 		}
 
-		Input input = new Input(newBuffer.array());
-		input.setPosition(2); // skip size
-		Object obj = kryoSerializer.readClassAndObject(input);
-
-		BufferPool.DEFAULT.freeByteBuffer(newBuffer);
-
-		return (T) obj;
+		return newBuffer;
 	}
 
 	/**
@@ -147,10 +134,14 @@ public class ClientDiffHandler<T> {
 			}
 		}
 
+		int index = msg.getLabel() % numSnapshots;
+
 		if (cls.isInstance(msg.getPayloadMessage())) {
 			/* Received full message */
-			snapshots.set(msg.getLabel() % numSnapshots,
-					(T) msg.getPayloadMessage());
+			BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
+
+			snapshots[index] = Utils.messageToBuffer(
+					(T) msg.getPayloadMessage(), null, kryoSerializer);
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
 			/* Received diff message */
 			if (LOG.isLoggable(Level.FINE)) {
@@ -163,11 +154,12 @@ public class ClientDiffHandler<T> {
 
 			DiffMessage diffMessage = (DiffMessage) msg.getPayloadMessage();
 
-			T oldMessage = snapshots
-					.get(diffMessage.getMessageId() % numSnapshots);
-			T newMessage = mergeMessage(oldMessage, diffMessage);
+			int oldIndex = diffMessage.getMessageId() % numSnapshots;
+			ByteBuffer mergedMessage = mergeMessage(snapshots[oldIndex],
+					diffMessage);
 
-			snapshots.set(msg.getLabel() % numSnapshots, newMessage);
+			BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
+			snapshots[index] = mergedMessage;
 		}
 
 		/* Send an ACK back */
@@ -179,7 +171,12 @@ public class ClientDiffHandler<T> {
 
 		if (isNew) {
 			curPos = msg.getLabel();
-			listeners.dispatch(con, snapshots.get(curPos % numSnapshots));
+
+			Input input = new Input(snapshots[index].array());
+			input.setPosition(2); // skip size
+
+			listeners.dispatch(con,
+					(T) kryoSerializer.readClassAndObject(input));
 		} else {
 			// log if message was old, for testing
 			if (LOG.isLoggable(Level.FINE)) {
