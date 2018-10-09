@@ -42,4 +42,9 @@ public class AckMessage {
 
 		return this;
 	}
+
+	@Override
+	public String toString() {
+		return "AckMessage { id: " + id + "}";
+	}
 }

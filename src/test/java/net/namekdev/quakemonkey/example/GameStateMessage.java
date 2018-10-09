@@ -48,6 +48,12 @@ public class GameStateMessage {
 		return id;
 	}
 
+	@Override
+	public String toString() {
+		return "GameStateMessage { name: " + name + ", pos: " + position
+				+ ", orientation: " + orientation + ", id: " + id + "}";
+	}
+
 	public static class GameStateSerializer
 			extends Serializer<GameStateMessage> {
 		@Override

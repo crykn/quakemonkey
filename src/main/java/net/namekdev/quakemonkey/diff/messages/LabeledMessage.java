@@ -51,4 +51,10 @@ public class LabeledMessage {
 
 		return this;
 	}
+
+	@Override
+	public String toString() {
+		return "LabeledMessage { label: " + label + ", payloadMessage: "
+				+ message + "}";
+	}
 }

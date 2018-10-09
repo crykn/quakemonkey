@@ -22,25 +22,23 @@ public class ClientTest implements Listener {
 
 	public ClientTest() throws IOException {
 		Client kryoClient = new Client();
+		kryoClient.start();
 
 		Kryo kryo = kryoClient.getKryo();
 		DiffClassRegistration.registerClasses(kryo);
 		kryo.register(GameStateMessage.class,
 				new GameStateMessage.GameStateSerializer());
 
-		kryoClient.start();
 		kryoClient.connect(1000, "localhost", 6143, 6143);
 
 		diffHandler = new ClientDiffHandler<GameStateMessage>(kryoClient,
 				GameStateMessage.class, (short) 30);
 		diffHandler.addListener(new BiConsumer<Connection, GameStateMessage>() {
-
 			@Override
 			public void accept(Connection con, GameStateMessage msg) {
 				// do something with the message
-				System.out.println("Client #" + con.getID() + " received: '"
-						+ msg.getName() + ", " + msg.getPosition() + ", "
-						+ msg.getOrientation() + "'");
+				System.out.println(
+						"Client #" + con.getID() + " received: '" + msg + "'");
 			}
 		});
 

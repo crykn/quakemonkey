@@ -1,5 +1,7 @@
 package net.namekdev.quakemonkey.diff.messages;
 
+import java.util.Arrays;
+
 import net.namekdev.quakemonkey.diff.utils.Pool;
 
 /**
@@ -62,5 +64,12 @@ public class DiffMessage {
 		this.data = data;
 
 		return this;
+	}
+
+	@Override
+	public String toString() {
+		return "DiffMessage { id: " + messageId + ", flags: "
+				+ Arrays.toString(flags) + ", data: " + Arrays.toString(data)
+				+ "}";
 	}
 }

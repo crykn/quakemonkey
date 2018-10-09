@@ -103,8 +103,8 @@ public class SerializationTests {
 		diffConnection.registerAck(firstMessage.getLabel());
 
 		// Server sends second gamestate (Orientation: 1 0 1)
-		position = new ArrayList(position); // clone
-		orientation = new ArrayList(orientation); // clone
+		position = new ArrayList<>(position); // clone
+		orientation = new ArrayList<>(orientation); // clone
 		orientation.set(0, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 2);
@@ -116,8 +116,8 @@ public class SerializationTests {
 		// 1st and 3rd gamestate.
 
 		// Server sends third gamestate (Orientation: 1 1 1)
-		position = new ArrayList(position); // clone
-		orientation = new ArrayList(orientation); // clone
+		position = new ArrayList<>(position); // clone
+		orientation = new ArrayList<>(orientation); // clone
 		orientation.set(1, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 3);
@@ -149,6 +149,7 @@ public class SerializationTests {
 		private byte id;
 
 		public GameStateMessage() {
+			//
 		}
 
 		public GameStateMessage(String name, List<Float> position,
@@ -257,7 +258,7 @@ public class SerializationTests {
 	private static class FakeClient extends Client {
 		@Override
 		public int sendUDP(Object object) {
-			// please do NOTHING for a good test purpose.
+			// do nothing for a testing purposes.
 			return 0;
 		}
 

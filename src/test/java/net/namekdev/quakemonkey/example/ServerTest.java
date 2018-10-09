@@ -27,6 +27,8 @@ public class ServerTest {
 
 	public ServerTest() throws IOException, InterruptedException {
 		kryoServer = new Server();
+		kryoServer.start();
+
 		Kryo kryo = kryoServer.getKryo();
 
 		DiffClassRegistration.registerClasses(kryo);
@@ -34,7 +36,7 @@ public class ServerTest {
 				new GameStateMessage.GameStateSerializer());
 
 		diffHandler = new ServerDiffHandler<GameStateMessage>(kryoServer);
-		kryoServer.start();
+
 		kryoServer.bind(6143, 6143);
 
 		kryoServer.addListener(new Listener() {
@@ -64,11 +66,14 @@ public class ServerTest {
 				GameStateMessage newMessage = new GameStateMessage("test",
 						newPos, orientation, (byte) 0);
 
+				System.out.println("Sent: '" + newMessage + "'");
+
 				/* Dispatch same message to all clients */
 				diffHandler.dispatchMessageToAll(newMessage);
 
 				// send a message that is old (id=1), see what happens
-				// myServer.broadcast(new LabeledMessage((short)1, newMessage));
+				// myServer.broadcast(new LabeledMessage((short) 1,
+				// newMessage));
 
 				/* Check if the connection is lagging badly */
 				for (Connection conn : kryoServer.getConnections()) {
