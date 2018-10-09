@@ -10,6 +10,9 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
+before_install:
+  - chmod +x gradlew
+
 #addons:
 #  sonarcloud:
 #    organization: "xyz"

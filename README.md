@@ -1,6 +1,6 @@
 ## What is quakemonkey?
 
-[![Release](https://jitpack.io/v/crykn/quakemonkey.svg)](https://jitpack.io/#crykn/quakemonkey) 
+[![Release](https://jitpack.io/v/crykn/quakemonkey.svg)](https://jitpack.io/#crykn/quakemonkey) [![Build Status](https://travis-ci.com/crykn/quakemonkey.svg?branch=master)](https://travis-ci.com/crykn/quakemonkey)
 
 Quakemonkey is an implementation of the snapshot protocol used in the successful Quake 3 engine in java. It was originally built on top of the existing jMonkeyEngine networking framework, but this fork ports it to the popular [KryoNet](https://github.com/EsotericSoftware/kryonet)-Framework. In short, this UDP-only protocol sends partial messages to each client in order to save bandwidth. These partials are created from the difference at byte level of the current message and the message that was last received by the client. For a more detailed overview, see [here](http://fabiensanglard.net/quake3/network.php).
 
