@@ -134,24 +134,28 @@ public class ClientDiffHandler<T> {
 	@VisibleForTesting
 	void processMessage(Connection con, LabeledMessage msg) {
 		/* Message is too old */
-		if (curPos - msg.getLabel() > numSnapshots || (msg.getLabel()
-				- curPos > Short.MAX_VALUE / 2
-				&& Short.MAX_VALUE - msg.getLabel() + curPos > numSnapshots)) {
-			if (LOG.isLoggable(Level.INFO)) {
-				LOG.log(Level.INFO, "Discarding too old message: "
-						+ msg.getLabel() + " vs. cur " + curPos);
+		if (msg.getLabel() > 0) {
+			if (curPos - msg.getLabel() > numSnapshots
+					|| (msg.getLabel() - curPos > Short.MAX_VALUE / 2
+							&& Short.MAX_VALUE - msg.getLabel()
+									+ curPos > numSnapshots)) {
+				if (LOG.isLoggable(Level.INFO)) {
+					LOG.log(Level.INFO, "Discarding too old message: "
+							+ msg.getLabel() + " vs. cur " + curPos);
+				}
+				return;
 			}
-			return;
 		}
 
 		if (cls.isInstance(msg.getPayloadMessage())) {
 			/* Received full message */
-			snapshots.set(msg.getLabel() % numSnapshots, (T) msg.getPayloadMessage());
+			snapshots.set(msg.getLabel() % numSnapshots,
+					(T) msg.getPayloadMessage());
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
 			/* Received diff message */
 			if (LOG.isLoggable(Level.FINE)) {
-				ByteBuffer logBuffer = Utils.messageToBuffer(msg.getPayloadMessage(),
-						null, kryoSerializer);
+				ByteBuffer logBuffer = Utils.messageToBuffer(
+						msg.getPayloadMessage(), null, kryoSerializer);
 				LOG.log(Level.FINE,
 						"Received diff of size " + logBuffer.limit());
 				BufferPool.DEFAULT.saveByteBuffer(logBuffer);
