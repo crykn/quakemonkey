@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff.utils;
+package net.namekdev.quakemonkey.utils.pool;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -11,11 +11,11 @@ import java.nio.IntBuffer;
 public class BufferPool {
 	public static final BufferPool DEFAULT = new BufferPool();
 
-	private final DuplicatedKeysTreeMap<Integer, byte[]> _byteArrayPool = new DuplicatedKeysTreeMap<Integer, byte[]>();
-	private final DuplicatedKeysTreeMap<Integer, int[]> _intArrayPool = new DuplicatedKeysTreeMap<Integer, int[]>();
-	private final DuplicatedKeysTreeMap<Integer, ByteBuffer> _byteBufferPool = new DuplicatedKeysTreeMap<Integer, ByteBuffer>(
+	private final DuplicatedKeysTreeMap<Integer, byte[]> byteArrayPool = new DuplicatedKeysTreeMap<Integer, byte[]>();
+	private final DuplicatedKeysTreeMap<Integer, int[]> intArrayPool = new DuplicatedKeysTreeMap<Integer, int[]>();
+	private final DuplicatedKeysTreeMap<Integer, ByteBuffer> byteBufferPool = new DuplicatedKeysTreeMap<Integer, ByteBuffer>(
 			false);
-	private final DuplicatedKeysTreeMap<Integer, IntBuffer> _intBufferPool = new DuplicatedKeysTreeMap<Integer, IntBuffer>(
+	private final DuplicatedKeysTreeMap<Integer, IntBuffer> intBufferPool = new DuplicatedKeysTreeMap<Integer, IntBuffer>(
 			false);
 
 	public byte[] obtainByteArray(int minimumSize) {
@@ -23,9 +23,9 @@ public class BufferPool {
 	}
 
 	public byte[] obtainByteArray(int size, boolean exactSize) {
-		synchronized (_byteArrayPool) {
-			byte[] array = exactSize ? _byteArrayPool.poll(size)
-					: _byteArrayPool.pollCeiling(size);
+		synchronized (byteArrayPool) {
+			byte[] array = exactSize ? byteArrayPool.poll(size)
+					: byteArrayPool.pollCeiling(size);
 
 			if (array == null) {
 				array = new byte[size];
@@ -39,9 +39,9 @@ public class BufferPool {
 	public void freeByteArray(byte[] array) {
 		if (array == null)
 			return;
-		
-		synchronized (_byteArrayPool) {
-			_byteArrayPool.put(array.length, array);
+
+		synchronized (byteArrayPool) {
+			byteArrayPool.put(array.length, array);
 		}
 	}
 
@@ -50,9 +50,9 @@ public class BufferPool {
 	}
 
 	public int[] obtainIntArray(int size, boolean exactSize) {
-		synchronized (_intArrayPool) {
-			int[] array = exactSize ? _intArrayPool.poll(size)
-					: _intArrayPool.pollCeiling(size);
+		synchronized (intArrayPool) {
+			int[] array = exactSize ? intArrayPool.poll(size)
+					: intArrayPool.pollCeiling(size);
 
 			if (array == null) {
 				array = new int[size];
@@ -66,9 +66,9 @@ public class BufferPool {
 	public void freeIntArray(int[] array) {
 		if (array == null)
 			return;
-		
-		synchronized (_intArrayPool) {
-			_intArrayPool.put(array.length, array);
+
+		synchronized (intArrayPool) {
+			intArrayPool.put(array.length, array);
 		}
 	}
 
@@ -77,9 +77,9 @@ public class BufferPool {
 	}
 
 	public ByteBuffer obtainByteBuffer(int size, boolean exactSize) {
-		synchronized (_byteBufferPool) {
-			ByteBuffer buffer = exactSize ? _byteBufferPool.poll(size)
-					: _byteBufferPool.pollCeiling(size);
+		synchronized (byteBufferPool) {
+			ByteBuffer buffer = exactSize ? byteBufferPool.poll(size)
+					: byteBufferPool.pollCeiling(size);
 
 			if (buffer == null) {
 				buffer = ByteBuffer.allocate(size);
@@ -93,9 +93,9 @@ public class BufferPool {
 	public void freeByteBuffer(ByteBuffer buffer) {
 		if (buffer == null)
 			return;
-		synchronized (_byteBufferPool) {
+		synchronized (byteBufferPool) {
 			buffer.clear();
-			_byteBufferPool.put(buffer.capacity(), buffer);
+			byteBufferPool.put(buffer.capacity(), buffer);
 		}
 	}
 
@@ -104,9 +104,9 @@ public class BufferPool {
 	}
 
 	public IntBuffer obtainIntBuffer(int size, boolean exactSize) {
-		synchronized (_intBufferPool) {
-			IntBuffer buffer = exactSize ? _intBufferPool.poll(size)
-					: _intBufferPool.pollCeiling(size);
+		synchronized (intBufferPool) {
+			IntBuffer buffer = exactSize ? intBufferPool.poll(size)
+					: intBufferPool.pollCeiling(size);
 
 			if (buffer == null) {
 				buffer = IntBuffer.allocate(size);
@@ -120,10 +120,10 @@ public class BufferPool {
 	public void freeIntBuffer(IntBuffer buffer) {
 		if (buffer == null)
 			return;
-		
-		synchronized (_intBufferPool) {
+
+		synchronized (intBufferPool) {
 			buffer.clear();
-			_intBufferPool.put(buffer.capacity(), buffer);
+			intBufferPool.put(buffer.capacity(), buffer);
 		}
 	}
 }

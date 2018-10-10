@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -7,10 +7,12 @@ import java.util.logging.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 
-import net.namekdev.quakemonkey.diff.messages.DiffMessage;
-import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
-import net.namekdev.quakemonkey.diff.utils.BufferPool;
+import net.namekdev.quakemonkey.messages.DiffMessage;
+import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.utils.BufferUtils;
+import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
  * The server-side handler of generating delta messages for one connection. It
@@ -26,7 +28,6 @@ public class DiffConnectionHandler<T> {
 	protected static final Logger lOG = Logger
 			.getLogger(DiffConnectionHandler.class.getName());
 	private final Kryo kryoSerializer;
-	private final short numSnapshots;
 	private final ByteBuffer[] snapshots;
 	private short curPos; // position in cyclic array
 	private short ackPos;
@@ -41,16 +42,14 @@ public class DiffConnectionHandler<T> {
 	 */
 	private final boolean alwaysSendDiff;
 
-	public DiffConnectionHandler(Kryo kryoSerializer, short numSnapshots,
-			boolean alwaysSendDiff) {
-		this.kryoSerializer = kryoSerializer;
-		this.numSnapshots = numSnapshots;
-		this.alwaysSendDiff = alwaysSendDiff;
-		snapshots = new ByteBuffer[numSnapshots];
+	public DiffConnectionHandler(Kryo kryoSerializer,
+			short snapshotHistoryCount, boolean alwaysSendDiff) {
+		Preconditions.checkNotNull(kryoSerializer);
+		Preconditions.checkArgument(snapshotHistoryCount >= 2);
 
-		for (int i = 0; i < numSnapshots; i++) {
-			snapshots[i] = null;
-		}
+		this.kryoSerializer = kryoSerializer;
+		this.alwaysSendDiff = alwaysSendDiff;
+		snapshots = new ByteBuffer[snapshotHistoryCount];
 
 		curPos = 0;
 		ackPos = -1;
@@ -72,9 +71,9 @@ public class DiffConnectionHandler<T> {
 	LabeledMessage generateSnapshot(T message) {
 		short oldPos = curPos;
 
-		int index = oldPos % numSnapshots;
+		int index = oldPos % snapshots.length;
 		BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
-		ByteBuffer newMessage = snapshots[index] = Utils
+		ByteBuffer newMessage = snapshots[index] = BufferUtils
 				.messageToBuffer(message, null, kryoSerializer);
 		curPos++;
 
@@ -88,13 +87,13 @@ public class DiffConnectionHandler<T> {
 		}
 
 		/* Is the last received message too old? Send a full one */
-		if (oldPos - ackPos > numSnapshots
-				|| (ackPos - oldPos > Short.MAX_VALUE / 2
-						&& Short.MAX_VALUE - ackPos + oldPos > numSnapshots)) {
+		if (oldPos - ackPos > snapshots.length
+				|| (ackPos - oldPos > Short.MAX_VALUE / 2 && Short.MAX_VALUE
+						- ackPos + oldPos > snapshots.length)) {
 			return LabeledMessage.POOL.obtain().set(oldPos, message);
 		}
 
-		ByteBuffer lastAckMessage = snapshots[ackPos % numSnapshots];
+		ByteBuffer lastAckMessage = snapshots[ackPos % snapshots.length];
 
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
@@ -103,7 +102,7 @@ public class DiffConnectionHandler<T> {
 	}
 
 	/**
-	 * Gets the number of messages the server is lagging behind
+	 * Gets the number of messages the server is lagging behind.
 	 * 
 	 * @return Number of messages left behind
 	 */

@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +22,7 @@ public class GameStateMessage {
 	private byte id;
 
 	public GameStateMessage() {
+		// default public constructor
 	}
 
 	public GameStateMessage(String name, List<Float> position,

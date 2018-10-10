@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff.utils;
+package net.namekdev.quakemonkey.utils.pool;
 
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -6,16 +6,16 @@ import java.util.Queue;
 import com.google.common.base.Preconditions;
 
 public class Pool<T> {
-	private final Queue<T> _bag;
-	private ObjectSupplier<T> _objServicer;
+	private final Queue<T> objPool;
+	private final ObjectSupplier<T> objSupplier;
 
-	public Pool(ObjectSupplier<T> objServicer, int size) {
-		_bag = new PriorityQueue<T>(size);
-		_objServicer = objServicer;
+	public Pool(ObjectSupplier<T> objSupplier, int size) {
+		objPool = new PriorityQueue<T>(size);
+		this.objSupplier = objSupplier;
 	}
 
-	public Pool(ObjectSupplier<T> objServicer) {
-		this(objServicer, 127);
+	public Pool(ObjectSupplier<T> objSupplier) {
+		this(objSupplier, 127);
 	}
 
 	/**
@@ -24,11 +24,11 @@ public class Pool<T> {
 	 *         instantiated object if the pool is empty.
 	 */
 	public T obtain() {
-		synchronized (_bag) {
-			T item = _bag.poll();
+		synchronized (objPool) {
+			T item = objPool.poll();
 
 			if (item == null) {
-				item = _objServicer.onCreate();
+				item = objSupplier.get();
 			}
 			// _objServicer.onGet(item);
 
@@ -44,14 +44,14 @@ public class Pool<T> {
 	public void free(T obj) {
 		Preconditions.checkNotNull(obj);
 
-		synchronized (_bag) {
-			_objServicer.onFree(obj);
-			_bag.add(obj);
+		synchronized (objPool) {
+			objSupplier.onFree(obj);
+			objPool.add(obj);
 		}
 	}
 
 	public static interface ObjectSupplier<T> {
-		public T onCreate();
+		public T get();
 
 		public void onFree(T obj);
 	}

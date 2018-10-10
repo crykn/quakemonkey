@@ -1,6 +1,6 @@
-package net.namekdev.quakemonkey.diff.messages;
+package net.namekdev.quakemonkey.messages;
 
-import net.namekdev.quakemonkey.diff.utils.Pool;
+import net.namekdev.quakemonkey.utils.pool.Pool;
 
 /**
  * A message containing another message with an identifier.
@@ -11,7 +11,7 @@ public class LabeledMessage {
 	public static final Pool<LabeledMessage> POOL = new Pool<LabeledMessage>(
 			new Pool.ObjectSupplier<LabeledMessage>() {
 				@Override
-				public LabeledMessage onCreate() {
+				public LabeledMessage get() {
 					return new LabeledMessage();
 				}
 
@@ -27,11 +27,6 @@ public class LabeledMessage {
 
 	public LabeledMessage() {
 		// default public constructor
-	}
-
-	public LabeledMessage(short label, Object message) {
-		this.label = label;
-		this.message = message;
 	}
 
 	public short getLabel() {

@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff.utils;
+package net.namekdev.quakemonkey.utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +25,14 @@ public class BiConsumerMultiplexer<A, B> {
 
 	public void removeBiConsumer(BiConsumer<A, B> consumer) {
 		listeners.remove(consumer);
+	}
+
+	public int size() {
+		return listeners.size();
+	}
+
+	public void clear() {
+		listeners.clear();
 	}
 
 	public void dispatch(A a, B b) {

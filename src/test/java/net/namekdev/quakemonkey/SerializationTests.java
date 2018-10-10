@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import static org.junit.Assert.assertEquals;
 
@@ -20,7 +20,10 @@ import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
-import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
+import net.namekdev.quakemonkey.ClientDiffHandler;
+import net.namekdev.quakemonkey.DiffClassRegistration;
+import net.namekdev.quakemonkey.DiffConnectionHandler;
+import net.namekdev.quakemonkey.messages.LabeledMessage;
 
 public class SerializationTests {
 	/**
@@ -108,7 +111,8 @@ public class SerializationTests {
 		orientation.set(0, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 2);
-		final Object secondMessage = diffConnection.generateSnapshot(message);
+		/* final Object secondMessage = */ diffConnection
+				.generateSnapshot(message);
 
 		// Now Client didn't receive or didn't acknowledge properly 2nd
 		// gamestate.
@@ -149,7 +153,7 @@ public class SerializationTests {
 		private byte id;
 
 		public GameStateMessage() {
-			//
+			// default public constructor
 		}
 
 		public GameStateMessage(String name, List<Float> position,

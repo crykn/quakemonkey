@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
@@ -13,11 +13,12 @@ import com.esotericsoftware.kryonet.Listener;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
-import net.namekdev.quakemonkey.diff.messages.AckMessage;
-import net.namekdev.quakemonkey.diff.messages.DiffMessage;
-import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
-import net.namekdev.quakemonkey.diff.utils.BiConsumerMultiplexer;
-import net.namekdev.quakemonkey.diff.utils.BufferPool;
+import net.namekdev.quakemonkey.messages.AckMessage;
+import net.namekdev.quakemonkey.messages.DiffMessage;
+import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.utils.BiConsumerMultiplexer;
+import net.namekdev.quakemonkey.utils.BufferUtils;
+import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
  * Handles the client-side job of receiving either messages of type {@code T} or
@@ -41,27 +42,22 @@ public class ClientDiffHandler<T> {
 	protected static final Logger LOG = Logger
 			.getLogger(ClientDiffHandler.class.getName());
 	private final Kryo kryoSerializer;
-	private final short numSnapshots;
 	private final Class<T> cls;
 	private final ByteBuffer[] snapshots;
 	private final BiConsumerMultiplexer<Connection, T> listeners;
 	private short curPos;
 
-	public ClientDiffHandler(Client client, Class<T> cls, short numSnapshots) {
+	public ClientDiffHandler(Client client, Class<T> cls,
+			short snapshotHistoryCount) {
 		Preconditions.checkNotNull(client);
 		Preconditions.checkNotNull(cls);
-		Preconditions.checkArgument(numSnapshots >= 1);
+		Preconditions.checkArgument(snapshotHistoryCount >= 2);
 
 		this.kryoSerializer = client.getKryo();
-		this.numSnapshots = numSnapshots;
 		this.cls = cls;
 
 		listeners = new BiConsumerMultiplexer<>();
-		snapshots = new ByteBuffer[numSnapshots];
-
-		for (int i = 0; i < numSnapshots; i++) {
-			snapshots[i] = null;
-		}
+		snapshots = new ByteBuffer[snapshotHistoryCount];
 
 		client.addListener(new Listener() { // don't use a TypeListener for
 											// performance reasons
@@ -122,10 +118,10 @@ public class ClientDiffHandler<T> {
 	void processMessage(Connection con, LabeledMessage msg) {
 		/* Message is too old */
 		if (msg.getLabel() > 0) {
-			if (curPos - msg.getLabel() > numSnapshots
+			if (curPos - msg.getLabel() > snapshots.length
 					|| (msg.getLabel() - curPos > Short.MAX_VALUE / 2
 							&& Short.MAX_VALUE - msg.getLabel()
-									+ curPos > numSnapshots)) {
+									+ curPos > snapshots.length)) {
 				if (LOG.isLoggable(Level.INFO)) {
 					LOG.log(Level.INFO, "Discarding too old message: "
 							+ msg.getLabel() + " vs. cur " + curPos);
@@ -134,18 +130,18 @@ public class ClientDiffHandler<T> {
 			}
 		}
 
-		int index = msg.getLabel() % numSnapshots;
+		int index = msg.getLabel() % snapshots.length;
 
 		if (cls.isInstance(msg.getPayloadMessage())) {
 			/* Received full message */
 			BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
 
-			snapshots[index] = Utils.messageToBuffer(
+			snapshots[index] = BufferUtils.messageToBuffer(
 					(T) msg.getPayloadMessage(), null, kryoSerializer);
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
 			/* Received diff message */
 			if (LOG.isLoggable(Level.FINE)) {
-				ByteBuffer logBuffer = Utils.messageToBuffer(
+				ByteBuffer logBuffer = BufferUtils.messageToBuffer(
 						msg.getPayloadMessage(), null, kryoSerializer);
 				LOG.log(Level.FINE,
 						"Received diff of size " + logBuffer.limit());
@@ -154,7 +150,7 @@ public class ClientDiffHandler<T> {
 
 			DiffMessage diffMessage = (DiffMessage) msg.getPayloadMessage();
 
-			int oldIndex = diffMessage.getMessageId() % numSnapshots;
+			int oldIndex = diffMessage.getMessageId() % snapshots.length;
 			ByteBuffer mergedMessage = mergeMessage(snapshots[oldIndex],
 					diffMessage);
 

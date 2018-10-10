@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -10,10 +10,10 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.google.common.base.Preconditions;
 
-import net.namekdev.quakemonkey.diff.messages.AckMessage;
-import net.namekdev.quakemonkey.diff.messages.DiffMessage;
-import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
-import net.namekdev.quakemonkey.diff.utils.BufferPool;
+import net.namekdev.quakemonkey.messages.AckMessage;
+import net.namekdev.quakemonkey.messages.DiffMessage;
+import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
  * Handles the dispatching of messages of type {@code T} to clients, using a
@@ -32,25 +32,25 @@ public class ServerDiffHandler<T> implements Listener {
 	protected static final Logger LOG = Logger
 			.getLogger(ServerDiffHandler.class.getName());
 	private final Server server;
-	private final short numHistory;
+	private final short snapshotHistoryCount;
 	private final Map<Connection, DiffConnectionHandler<T>> diffConnections;
 	private final boolean alwaysSendDiffs;
 
-	public ServerDiffHandler(Server server, short numHistory,
+	public ServerDiffHandler(Server server, short snapshotHistoryCount,
 			boolean alwaysSendDiffs) {
 		Preconditions.checkNotNull(server);
-		Preconditions.checkArgument(numHistory >= 1);
+		Preconditions.checkArgument(snapshotHistoryCount >= 2);
 
 		this.server = server;
-		this.numHistory = numHistory;
+		this.snapshotHistoryCount = snapshotHistoryCount;
 		this.alwaysSendDiffs = alwaysSendDiffs;
 		diffConnections = new HashMap<Connection, DiffConnectionHandler<T>>();
 
 		server.addListener(this);
 	}
 
-	public ServerDiffHandler(Server server, short numHistory) {
-		this(server, numHistory, false);
+	public ServerDiffHandler(Server server, short snapshotHistoryCount) {
+		this(server, snapshotHistoryCount, false);
 	}
 
 	public ServerDiffHandler(Server server, boolean alwaysSendDiffs) {
@@ -83,7 +83,7 @@ public class ServerDiffHandler<T> implements Listener {
 	private void dispatchMessageToConnection(Connection connection, T msg) {
 		if (!diffConnections.containsKey(connection)) {
 			diffConnections.put(connection, new DiffConnectionHandler<T>(
-					server.getKryo(), numHistory, alwaysSendDiffs));
+					server.getKryo(), snapshotHistoryCount, alwaysSendDiffs));
 		}
 
 		DiffConnectionHandler<T> diffConnection = diffConnections
@@ -113,10 +113,8 @@ public class ServerDiffHandler<T> implements Listener {
 	 * @return Connection lag
 	 */
 	public int getLag(Connection conn) {
-		if (!diffConnections.containsKey(conn)) {
-			throw new IllegalStateException(
-					"Trying to get lag of connection that does not exist (yet).");
-		}
+		Preconditions.checkState(diffConnections.containsKey(conn),
+				"Trying to get lag of connection that does not exist (yet).");
 
 		return diffConnections.get(conn).getLag();
 	}

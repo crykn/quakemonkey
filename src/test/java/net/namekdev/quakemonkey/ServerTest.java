@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff;
+package net.namekdev.quakemonkey;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,10 +17,10 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
-import net.namekdev.quakemonkey.diff.ClientDiffHandler;
-import net.namekdev.quakemonkey.diff.DiffClassRegistration;
-import net.namekdev.quakemonkey.diff.ServerDiffHandler;
-import net.namekdev.quakemonkey.diff.messages.LabeledMessage;
+import net.namekdev.quakemonkey.ClientDiffHandler;
+import net.namekdev.quakemonkey.DiffClassRegistration;
+import net.namekdev.quakemonkey.ServerDiffHandler;
+import net.namekdev.quakemonkey.messages.LabeledMessage;
 
 /**
  * An example server that shows how the snapshot network code works.

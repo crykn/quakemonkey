@@ -1,8 +1,8 @@
-package net.namekdev.quakemonkey.diff.messages;
+package net.namekdev.quakemonkey.messages;
 
 import java.util.Arrays;
 
-import net.namekdev.quakemonkey.diff.utils.Pool;
+import net.namekdev.quakemonkey.utils.pool.Pool;
 
 /**
  * This message is used to send the byte-level difference of two messages to the
@@ -14,7 +14,7 @@ public class DiffMessage {
 	public static final Pool<DiffMessage> POOL = new Pool<DiffMessage>(
 			new Pool.ObjectSupplier<DiffMessage>() {
 				@Override
-				public DiffMessage onCreate() {
+				public DiffMessage get() {
 					return new DiffMessage();
 				}
 
@@ -35,12 +35,6 @@ public class DiffMessage {
 
 	public DiffMessage() {
 		// default public constructor
-	}
-
-	public DiffMessage(short messageId, byte[] flag, int[] data) {
-		this.messageId = messageId;
-		this.data = data;
-		this.flags = flag;
 	}
 
 	public short getMessageId() {

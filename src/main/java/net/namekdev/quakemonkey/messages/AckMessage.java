@@ -1,6 +1,6 @@
-package net.namekdev.quakemonkey.diff.messages;
+package net.namekdev.quakemonkey.messages;
 
-import net.namekdev.quakemonkey.diff.utils.Pool;
+import net.namekdev.quakemonkey.utils.pool.Pool;
 
 /**
  * An acknowledgment message that is sent from the client to the server. It
@@ -13,7 +13,7 @@ public class AckMessage {
 	public static final Pool<AckMessage> POOL = new Pool<AckMessage>(
 			new Pool.ObjectSupplier<AckMessage>() {
 				@Override
-				public AckMessage onCreate() {
+				public AckMessage get() {
 					return new AckMessage();
 				}
 
@@ -27,10 +27,6 @@ public class AckMessage {
 
 	public AckMessage() {
 		// default public constructor
-	}
-
-	public AckMessage(short id) {
-		this.id = id;
 	}
 
 	public short getId() {

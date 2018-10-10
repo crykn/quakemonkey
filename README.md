@@ -36,6 +36,7 @@ ServerDiffHandler<GameStateMessage> diffHandler = new ServerDiffHandler<>(server
 server.bind(54555, 54777); // Start the server
 
 // Send a message to the clients
+// this message is reduced in size by using byte level deltas
 diffHandler.dispatchMessageToAll(messageToSend);
 ```
 
@@ -51,11 +52,8 @@ DiffClassRegistration.registerClasses(client.getKryo());
 // Register the diff handler & listeners
 ClientDiffHandler<GameStateMessage> diffHandler = new ClientDiffHandler<>(client, GameStateMessage.class); 
 diffHandler.addListener( // register a listener for the GameStateMessage
-	new BiConsumer<Connection, SerializationTests.GameStateMessage>() {
-		@Override
-		public void accept(Connection con, GameStateMessage msg) {
-			// do anything with the message
-		}
+	(con, msg) -> {
+      // do anything with the received message
 	});
 		
 client.connect(5000, "192.168.0.4", 54555, 54777); // Start the client

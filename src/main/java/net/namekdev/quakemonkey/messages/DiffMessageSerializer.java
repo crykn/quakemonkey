@@ -1,4 +1,4 @@
-package net.namekdev.quakemonkey.diff.messages;
+package net.namekdev.quakemonkey.messages;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
