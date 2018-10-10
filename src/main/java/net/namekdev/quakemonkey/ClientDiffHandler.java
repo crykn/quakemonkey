@@ -91,11 +91,11 @@ public class ClientDiffHandler<T> {
 			DiffMessage diffMessage) {
 		// Copy old message
 		ByteBuffer newBuffer = BufferPool.DEFAULT
-				.obtainByteBuffer(Short.MAX_VALUE);
+				.obtainByteBuffer(oldMessage.remaining());
 		newBuffer.put(oldMessage);
 		newBuffer.position(0);
 
-		byte[] diffFlags = diffMessage.getFlag();
+		byte[] diffFlags = diffMessage.getFlags();
 		int[] diffData = diffMessage.getData();
 		int index = 0;
 
@@ -174,7 +174,7 @@ public class ClientDiffHandler<T> {
 			listeners.dispatch(con,
 					(T) kryoSerializer.readClassAndObject(input));
 		} else {
-			// log if message was old, for testing
+			// log if message was old
 			if (LOG.isLoggable(Level.FINE)) {
 				LOG.log(Level.FINE, "Old message received: " + msg.getLabel()
 						+ " vs. cur " + curPos);

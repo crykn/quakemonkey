@@ -70,12 +70,12 @@ public class DiffConnectionHandler<T> {
 	@VisibleForTesting
 	LabeledMessage generateSnapshot(T message) {
 		short oldPos = curPos;
+		curPos++;
 
 		int index = oldPos % snapshots.length;
 		BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
 		ByteBuffer newMessage = snapshots[index] = BufferUtils
 				.messageToBuffer(message, null, kryoSerializer);
-		curPos++;
 
 		// only allow positive positions
 		if (curPos < 0) {
@@ -94,6 +94,7 @@ public class DiffConnectionHandler<T> {
 		}
 
 		ByteBuffer lastAckMessage = snapshots[ackPos % snapshots.length];
+		lastAckMessage.position(0); // could have been used before
 
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
@@ -150,12 +151,12 @@ public class DiffConnectionHandler<T> {
 		buffer.limit(intBound); // set buffers to be the same size
 
 		IntBuffer diffInts = BufferPool.DEFAULT.obtainIntBuffer(buffer.limit()); // great
-		// overestimation
+																					// overestimation
 
 		// check block of size int
 		int numBits = intBound / 4;
 		int numBytes = (numBits - 1) / 8 + 1;
-		byte[] flag = BufferPool.DEFAULT.obtainByteArray(numBytes);
+		byte[] flags = BufferPool.DEFAULT.obtainByteArray(numBytes);
 
 		// also works if old and new are not the same size, but less efficiently
 		int i = 0;
@@ -164,9 +165,9 @@ public class DiffConnectionHandler<T> {
 			if (previousBuffer.remaining() < 4
 					|| val != previousBuffer.getInt()) {
 				diffInts.put(val);
-				flag[i / 8] |= 1 << (i % 8);
+				flags[i / 8] |= 1 << (i % 8);
 			} else {
-				flag[i / 8] &= ~(1 << (i % 8));
+				flags[i / 8] &= ~(1 << (i % 8));
 			}
 			i++;
 		}
@@ -176,15 +177,15 @@ public class DiffConnectionHandler<T> {
 		/* Check what is smaller, delta message or original buffer */
 		Object retMessage = null;
 
-		// TODO fix size calculation to be more accurate
-		if (alwaysSendDiff || diffInts.remaining() * 4 + 8 < buffer.limit()) {
+		if (alwaysSendDiff || (diffInts.remaining() * 4
+				+ diffInts.remaining() / 8 + 1) < buffer.limit()) {
 			int diffDataSize = diffInts.remaining();
 			int[] diffData = BufferPool.DEFAULT.obtainIntArray(diffDataSize,
 					true);
 
 			diffInts.get(diffData, 0, diffDataSize);
 
-			retMessage = DiffMessage.POOL.obtain().set(prevID, flag, diffData);
+			retMessage = DiffMessage.POOL.obtain().set(prevID, flags, diffData);
 		} else {
 			retMessage = null;
 		}

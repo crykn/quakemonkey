@@ -20,9 +20,6 @@ import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
-import net.namekdev.quakemonkey.ClientDiffHandler;
-import net.namekdev.quakemonkey.DiffClassRegistration;
-import net.namekdev.quakemonkey.DiffConnectionHandler;
 import net.namekdev.quakemonkey.messages.LabeledMessage;
 
 public class SerializationTests {

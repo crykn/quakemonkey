@@ -96,7 +96,7 @@ public class ServerDiffHandler<T> implements Listener {
 			DiffMessage diffMessage = (DiffMessage) newMessage
 					.getPayloadMessage();
 
-			BufferPool.DEFAULT.freeByteArray(diffMessage.getFlag());
+			BufferPool.DEFAULT.freeByteArray(diffMessage.getFlags());
 			BufferPool.DEFAULT.freeIntArray(diffMessage.getData());
 			DiffMessage.POOL.free(diffMessage);
 		}

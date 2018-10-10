@@ -11,7 +11,7 @@ public class LabeledMessage {
 	public static final Pool<LabeledMessage> POOL = new Pool<LabeledMessage>(
 			new Pool.ObjectSupplier<LabeledMessage>() {
 				@Override
-				public LabeledMessage get() {
+				public LabeledMessage newInstance() {
 					return new LabeledMessage();
 				}
 

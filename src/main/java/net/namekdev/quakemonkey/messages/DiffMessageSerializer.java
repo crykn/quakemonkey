@@ -35,8 +35,8 @@ public class DiffMessageSerializer extends Serializer<DiffMessage> {
 	@Override
 	public void write(Kryo kryo, Output output, DiffMessage diff) {
 		output.writeShort(diff.getMessageId());
-		output.writeShort((short) diff.getFlag().length);
-		output.write(diff.getFlag());
+		output.writeShort((short) diff.getFlags().length);
+		output.write(diff.getFlags());
 
 		output.writeInts(diff.getData(), 0, diff.getData().length);
 

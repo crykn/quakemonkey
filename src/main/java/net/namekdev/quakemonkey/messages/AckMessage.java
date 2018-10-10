@@ -13,7 +13,7 @@ public class AckMessage {
 	public static final Pool<AckMessage> POOL = new Pool<AckMessage>(
 			new Pool.ObjectSupplier<AckMessage>() {
 				@Override
-				public AckMessage get() {
+				public AckMessage newInstance() {
 					return new AckMessage();
 				}
 

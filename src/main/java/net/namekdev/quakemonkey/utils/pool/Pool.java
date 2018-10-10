@@ -1,7 +1,7 @@
 package net.namekdev.quakemonkey.utils.pool;
 
-import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.google.common.base.Preconditions;
 
@@ -10,7 +10,7 @@ public class Pool<T> {
 	private final ObjectSupplier<T> objSupplier;
 
 	public Pool(ObjectSupplier<T> objSupplier, int size) {
-		objPool = new PriorityQueue<T>(size);
+		objPool = new LinkedBlockingQueue<T>(size);
 		this.objSupplier = objSupplier;
 	}
 
@@ -24,16 +24,14 @@ public class Pool<T> {
 	 *         instantiated object if the pool is empty.
 	 */
 	public T obtain() {
-		synchronized (objPool) {
-			T item = objPool.poll();
+		T item = objPool.poll();
 
-			if (item == null) {
-				item = objSupplier.get();
-			}
-			// _objServicer.onGet(item);
-
-			return item;
+		if (item == null) {
+			item = objSupplier.newInstance();
 		}
+		// _objServicer.onGet(item);
+
+		return item;
 	}
 
 	/**
@@ -44,14 +42,12 @@ public class Pool<T> {
 	public void free(T obj) {
 		Preconditions.checkNotNull(obj);
 
-		synchronized (objPool) {
-			objSupplier.onFree(obj);
-			objPool.add(obj);
-		}
+		objSupplier.onFree(obj);
+		objPool.add(obj);
 	}
 
 	public static interface ObjectSupplier<T> {
-		public T get();
+		public T newInstance();
 
 		public void onFree(T obj);
 	}

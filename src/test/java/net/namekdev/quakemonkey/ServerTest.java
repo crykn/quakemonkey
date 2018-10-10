@@ -17,17 +17,8 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
-import net.namekdev.quakemonkey.ClientDiffHandler;
-import net.namekdev.quakemonkey.DiffClassRegistration;
-import net.namekdev.quakemonkey.ServerDiffHandler;
 import net.namekdev.quakemonkey.messages.LabeledMessage;
 
-/**
- * An example server that shows how the snapshot network code works.
- * 
- * @author Ben Ruijl
- * 
- */
 public class ServerTest {
 	private int serverTicks = 0;
 	private Server server;
@@ -35,7 +26,7 @@ public class ServerTest {
 	private ClientDiffHandler<GameStateMessage> clientDiffHandler;
 
 	private List<Integer> dropIndices = Arrays
-			.asList(new Integer[] { 15, 23, 50, 51, 66 });
+			.asList(new Integer[] { 15, 23, 50, 51, 52, 66 });
 	private List<Integer> wrongSendIndices = Arrays
 			.asList(new Integer[] { 45, 47 });
 	private int maxIndex = 70;
@@ -90,7 +81,7 @@ public class ServerTest {
 					public void accept(Connection con, GameStateMessage msg) {
 						// Do something with the message
 						System.out.println("Client received: '" + msg + "'");
-						
+
 						if (msg.getPosition().get(0) == maxIndex)
 							lastReceivedObject = msg;
 					}
@@ -98,8 +89,8 @@ public class ServerTest {
 	}
 
 	private void testDiff() {
-		List<Float> orientation = Arrays
-				.asList(new Float[] { 0.5f, 0.6f, 0.7f });
+		List<Float> orientation = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f,
+				0.8f, 1f, 2f, 5f, 6f, 7f, 8f, 9f });
 
 		while (true && serverTicks <= maxIndex) {
 			Collection<Connection> connections = server.getConnections();
@@ -107,15 +98,16 @@ public class ServerTest {
 				/* Create message */
 				List<Float> newPos = new ArrayList<Float>(
 						Arrays.asList(new Float[] { (float) serverTicks,
-								(float) (Float.MAX_VALUE / serverTicks),
-								3.0f }));
+								(float) (Float.MAX_VALUE / serverTicks), 3.0f,
+								4f, 5.5f, 67f }));
 
-				GameStateMessage newMessage = new GameStateMessage("test",
-						newPos, orientation, (byte) 0);
+				GameStateMessage newMessage = new GameStateMessage(
+						"abcdefghijklmnopqrstuvwxyz", newPos, orientation,
+						(byte) 0);
 
 				/* Dispatch message to client */
 				if (!dropIndices.contains(serverTicks)) {
-					System.out.println("Sent: '" + newMessage + "'");
+					System.out.println("Server sends: '" + newMessage + "'");
 					diffHandler.dispatchMessageToAll(newMessage);
 				} else {
 					System.out.println("Message " + serverTicks + " dropped");
@@ -129,12 +121,11 @@ public class ServerTest {
 							"Old message " + (serverTicks - 20) + " sent");
 				}
 
-				/* Check if the connection is lagging badly */
+				/* Check if the connection is lagging */
 				for (Connection conn : server.getConnections()) {
 					if (diffHandler.getLag(conn) > 20) {
-						System.out
-								.println("Client " + conn.getRemoteAddressUDP()
-										+ " is lagging badly.");
+						System.out.println("Client "
+								+ conn.getRemoteAddressUDP() + " is lagging.");
 					}
 				}
 

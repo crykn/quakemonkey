@@ -8,13 +8,6 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-/**
- * Example master gamestate that has to be sent from the server to the client
- * every server tick.
- * 
- * @author Ben Ruijl
- * 
- */
 public class GameStateMessage {
 	private String name;
 	private List<Float> position;

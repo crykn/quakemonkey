@@ -14,7 +14,7 @@ public class DiffMessage {
 	public static final Pool<DiffMessage> POOL = new Pool<DiffMessage>(
 			new Pool.ObjectSupplier<DiffMessage>() {
 				@Override
-				public DiffMessage get() {
+				public DiffMessage newInstance() {
 					return new DiffMessage();
 				}
 
@@ -45,7 +45,7 @@ public class DiffMessage {
 		return data;
 	}
 
-	public byte[] getFlag() {
+	public byte[] getFlags() {
 		return flags;
 	}
 
