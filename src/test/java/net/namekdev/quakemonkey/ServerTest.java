@@ -74,7 +74,7 @@ public class ServerTest {
 		kryoClient.connect(1000, "localhost", 6143, 6143);
 
 		clientDiffHandler = new ClientDiffHandler<GameStateMessage>(kryoClient,
-				GameStateMessage.class, (short) 30);
+				GameStateMessage.class, (short) 16);
 		clientDiffHandler
 				.addListener(new BiConsumer<Connection, GameStateMessage>() {
 					@Override

@@ -1,5 +1,6 @@
 package net.namekdev.quakemonkey.utils.pool;
 
+import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -13,6 +14,7 @@ import java.util.TreeMap;
  */
 class DuplicatedKeysTreeMap<K, V> {
 	private final TreeMap<K, Queue<V>> map = new TreeMap<K, Queue<V>>();
+	private final Comparator<? super V> comparator;
 
 	/**
 	 * Determines whether bags for a specific key should get removed, when they
@@ -25,6 +27,12 @@ class DuplicatedKeysTreeMap<K, V> {
 	}
 
 	public DuplicatedKeysTreeMap(boolean shouldRemoveSubBagsWhenEmpty) {
+		this(shouldRemoveSubBagsWhenEmpty, null);
+	}
+
+	public DuplicatedKeysTreeMap(boolean shouldRemoveSubBagsWhenEmpty,
+			Comparator<? super V> comparator) {
+		this.comparator = comparator;
 		this.shouldRemoveSubBagsWhenEmpty = shouldRemoveSubBagsWhenEmpty;
 	}
 
@@ -84,7 +92,10 @@ class DuplicatedKeysTreeMap<K, V> {
 		Queue<V> bag = map.get(key);
 
 		if (bag == null) {
-			bag = new PriorityQueue<V>();
+			if (comparator == null)
+				bag = new PriorityQueue<V>();
+			else
+				bag = new PriorityQueue<V>(comparator);
 			map.put(key, bag);
 		}
 

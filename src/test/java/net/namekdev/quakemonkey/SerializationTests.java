@@ -36,7 +36,7 @@ public class SerializationTests {
 
 		// First server side
 		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
-				kryoSerializer, (short) 20);
+				kryoSerializer, (short) 16);
 		List<Float> position = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
 		List<Float> orientation = Arrays.asList(new Float[] { 0f, 0f, 1f });
 		byte id = (byte) 1;
@@ -47,7 +47,7 @@ public class SerializationTests {
 
 		// Now client side
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
-				fakeClient, GameStateMessage.class, (short) 30);
+				fakeClient, GameStateMessage.class, (short) 16);
 
 		clientDiffHandler.addListener(
 				new BiConsumer<Connection, SerializationTests.GameStateMessage>() {
@@ -78,7 +78,7 @@ public class SerializationTests {
 		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
 				kryoSerializer, (short) 20, true);
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
-				fakeClient, GameStateMessage.class, (short) 30);
+				fakeClient, GameStateMessage.class, (short) 16);
 		// ServerDiffHandler<GameStateMessage> serverDiffHandler = new
 		// ServerDiffHandler<SerializationTests.GameStateMessage>(new
 		// FakeServer());

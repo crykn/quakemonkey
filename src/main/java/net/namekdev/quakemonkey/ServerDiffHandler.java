@@ -13,6 +13,7 @@ import com.google.common.base.Preconditions;
 import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
 import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
@@ -36,10 +37,24 @@ public class ServerDiffHandler<T> implements Listener {
 	private final Map<Connection, DiffConnectionHandler<T>> diffConnections;
 	private final boolean alwaysSendDiffs;
 
+	/**
+	 * @param server
+	 *            The used server.
+	 * @param snapshotHistoryCount
+	 *            The count of snapshots to keep. Has to be above <code>4</code>
+	 *            (otherwise it would be quite useless on bad connections) and a
+	 *            power of two (because the handler uses a short as a cyclic
+	 *            index).
+	 * @param alwaysSendDiffs
+	 *            Whether the server should always send diff messages or compare
+	 *            their size to the original message first.
+	 */
 	public ServerDiffHandler(Server server, short snapshotHistoryCount,
 			boolean alwaysSendDiffs) {
 		Preconditions.checkNotNull(server);
-		Preconditions.checkArgument(snapshotHistoryCount >= 2);
+		Preconditions.checkArgument(snapshotHistoryCount >= 4);
+		Preconditions.checkArgument(Utils.isPowerOfTwo(snapshotHistoryCount),
+				"The snapshotHistoryCount has to be a power of two");
 
 		this.server = server;
 		this.snapshotHistoryCount = snapshotHistoryCount;
@@ -54,7 +69,7 @@ public class ServerDiffHandler<T> implements Listener {
 	}
 
 	public ServerDiffHandler(Server server, boolean alwaysSendDiffs) {
-		this(server, (short) 20, alwaysSendDiffs);
+		this(server, (short) 32, alwaysSendDiffs);
 	}
 
 	public ServerDiffHandler(Server server) {
@@ -114,7 +129,7 @@ public class ServerDiffHandler<T> implements Listener {
 	 */
 	public int getLag(Connection conn) {
 		Preconditions.checkState(diffConnections.containsKey(conn),
-				"Trying to get lag of connection that does not exist (yet).");
+				"Trying to get lag of a connection that does not exist (yet).");
 
 		return diffConnections.get(conn).getLag();
 	}

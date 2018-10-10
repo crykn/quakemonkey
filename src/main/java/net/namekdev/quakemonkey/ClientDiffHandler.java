@@ -17,7 +17,7 @@ import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
 import net.namekdev.quakemonkey.messages.LabeledMessage;
 import net.namekdev.quakemonkey.utils.BiConsumerMultiplexer;
-import net.namekdev.quakemonkey.utils.BufferUtils;
+import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
@@ -45,13 +45,20 @@ public class ClientDiffHandler<T> {
 	private final Class<T> cls;
 	private final ByteBuffer[] snapshots;
 	private final BiConsumerMultiplexer<Connection, T> listeners;
+	/**
+	 * Position in cyclic array.
+	 * 
+	 * @see Utils#getIndexForPos(int, short)
+	 */
 	private short curPos;
 
 	public ClientDiffHandler(Client client, Class<T> cls,
 			short snapshotHistoryCount) {
 		Preconditions.checkNotNull(client);
 		Preconditions.checkNotNull(cls);
-		Preconditions.checkArgument(snapshotHistoryCount >= 2);
+		Preconditions.checkArgument(snapshotHistoryCount >= 4);
+		Preconditions.checkArgument(Utils.isPowerOfTwo(snapshotHistoryCount),
+				"The snapshotHistoryCount has to be a power of two");
 
 		this.kryoSerializer = client.getKryo();
 		this.cls = cls;
@@ -97,12 +104,12 @@ public class ClientDiffHandler<T> {
 
 		byte[] diffFlags = diffMessage.getFlags();
 		int[] diffData = diffMessage.getData();
-		int index = 0;
+		int dataIndex = 0;
 
 		for (int i = 0; i < 8 * diffFlags.length; i++) {
 			if ((diffFlags[i / 8] & (1 << (i % 8))) != 0) {
-				newBuffer.putInt(i * 4, diffData[index]);
-				index++;
+				newBuffer.putInt(i * 4, diffData[dataIndex]);
+				dataIndex++;
 			}
 		}
 
@@ -116,32 +123,32 @@ public class ClientDiffHandler<T> {
 	@SuppressWarnings("unchecked")
 	@VisibleForTesting
 	void processMessage(Connection con, LabeledMessage msg) {
-		/* Message is too old */
-		if (msg.getLabel() > 0) {
-			if (curPos - msg.getLabel() > snapshots.length
-					|| (msg.getLabel() - curPos > Short.MAX_VALUE / 2
-							&& Short.MAX_VALUE - msg.getLabel()
-									+ curPos > snapshots.length)) {
-				if (LOG.isLoggable(Level.INFO)) {
-					LOG.log(Level.INFO, "Discarding too old message: "
-							+ msg.getLabel() + " vs. cur " + curPos);
-				}
-				return;
-			}
-		}
+		short diff = (short) (msg.getLabel() - curPos);
 
-		int index = msg.getLabel() % snapshots.length;
+		/* Message is too old; we already got a newer one */
+		if (diff < 0) {
+			if (LOG.isLoggable(Level.INFO)) {
+				LOG.log(Level.INFO,
+						"Discarding too old message; a newer one is already available: "
+								+ msg.getLabel() + " vs. current " + curPos);
+			}
+			return;
+		}
+		// if (diff > snapshots.length)
+
+		/* Message is up to date */
+		int index = Utils.getIndexForPos(snapshots.length, msg.getLabel());
 
 		if (cls.isInstance(msg.getPayloadMessage())) {
-			/* Received full message */
+			/* > Received a full message */
 			BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
 
-			snapshots[index] = BufferUtils.messageToBuffer(
+			snapshots[index] = Utils.messageToBuffer(
 					(T) msg.getPayloadMessage(), null, kryoSerializer);
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
-			/* Received diff message */
+			/* > Received a diff message */
 			if (LOG.isLoggable(Level.FINE)) {
-				ByteBuffer logBuffer = BufferUtils.messageToBuffer(
+				ByteBuffer logBuffer = Utils.messageToBuffer(
 						msg.getPayloadMessage(), null, kryoSerializer);
 				LOG.log(Level.FINE,
 						"Received diff of size " + logBuffer.limit());
@@ -150,7 +157,8 @@ public class ClientDiffHandler<T> {
 
 			DiffMessage diffMessage = (DiffMessage) msg.getPayloadMessage();
 
-			int oldIndex = diffMessage.getMessageId() % snapshots.length;
+			int oldIndex = Utils.getIndexForPos(snapshots.length,
+					diffMessage.getMessageId());
 			ByteBuffer mergedMessage = mergeMessage(snapshots[oldIndex],
 					diffMessage);
 
@@ -162,23 +170,11 @@ public class ClientDiffHandler<T> {
 		con.sendUDP(AckMessage.POOL.obtain().set(msg.getLabel()));
 
 		/* Broadcast received changes to listeners */
-		boolean isNew = curPos == 0 || curPos < msg.getLabel()
-				|| msg.getLabel() - curPos > Short.MAX_VALUE / 2;
+		curPos = msg.getLabel();
 
-		if (isNew) {
-			curPos = msg.getLabel();
+		Input input = new Input(snapshots[index].array());
+		input.setPosition(2); // skip size
 
-			Input input = new Input(snapshots[index].array());
-			input.setPosition(2); // skip size
-
-			listeners.dispatch(con,
-					(T) kryoSerializer.readClassAndObject(input));
-		} else {
-			// log if message was old
-			if (LOG.isLoggable(Level.FINE)) {
-				LOG.log(Level.FINE, "Old message received: " + msg.getLabel()
-						+ " vs. cur " + curPos);
-			}
-		}
+		listeners.dispatch(con, (T) kryoSerializer.readClassAndObject(input));
 	}
 }

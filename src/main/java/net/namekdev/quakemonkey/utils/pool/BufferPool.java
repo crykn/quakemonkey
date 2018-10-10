@@ -2,6 +2,7 @@ package net.namekdev.quakemonkey.utils.pool;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Comparator;
 
 /**
  * A pool for byte and integer arrays as well as buffers.
@@ -11,8 +12,18 @@ import java.nio.IntBuffer;
 public class BufferPool {
 	public static final BufferPool DEFAULT = new BufferPool();
 
-	private final DuplicatedKeysTreeMap<Integer, byte[]> byteArrayPool = new DuplicatedKeysTreeMap<Integer, byte[]>();
-	private final DuplicatedKeysTreeMap<Integer, int[]> intArrayPool = new DuplicatedKeysTreeMap<Integer, int[]>();
+	private final DuplicatedKeysTreeMap<Integer, byte[]> byteArrayPool = new DuplicatedKeysTreeMap<Integer, byte[]>(
+			true, new Comparator<byte[]>() {
+				public int compare(byte[] o1, byte[] o2) {
+					return Integer.compare(o1.length, o2.length);
+				};
+			});
+	private final DuplicatedKeysTreeMap<Integer, int[]> intArrayPool = new DuplicatedKeysTreeMap<Integer, int[]>(
+			true, new Comparator<int[]>() {
+				public int compare(int[] o1, int[] o2) {
+					return Integer.compare(o1.length, o2.length);
+				};
+			});
 	private final DuplicatedKeysTreeMap<Integer, ByteBuffer> byteBufferPool = new DuplicatedKeysTreeMap<Integer, ByteBuffer>(
 			false);
 	private final DuplicatedKeysTreeMap<Integer, IntBuffer> intBufferPool = new DuplicatedKeysTreeMap<Integer, IntBuffer>(

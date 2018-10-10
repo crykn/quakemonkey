@@ -11,7 +11,7 @@ import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.DiffMessage;
 import net.namekdev.quakemonkey.messages.LabeledMessage;
-import net.namekdev.quakemonkey.utils.BufferUtils;
+import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
 /**
@@ -29,7 +29,12 @@ public class DiffConnectionHandler<T> {
 			.getLogger(DiffConnectionHandler.class.getName());
 	private final Kryo kryoSerializer;
 	private final ByteBuffer[] snapshots;
-	private short curPos; // position in cyclic array
+	/**
+	 * Position in cyclic array.
+	 * 
+	 * @see Utils#getIndexForPos(int, short)
+	 */
+	private short curPos;
 	private short ackPos;
 
 	/**
@@ -52,7 +57,7 @@ public class DiffConnectionHandler<T> {
 		snapshots = new ByteBuffer[snapshotHistoryCount];
 
 		curPos = 0;
-		ackPos = -1;
+		ackPos = (short) (-snapshotHistoryCount - 1);
 	}
 
 	public DiffConnectionHandler(Kryo kryoSerializer, short numSnapshots) {
@@ -72,29 +77,26 @@ public class DiffConnectionHandler<T> {
 		short oldPos = curPos;
 		curPos++;
 
-		int index = oldPos % snapshots.length;
+		int index = Utils.getIndexForPos(snapshots.length, oldPos);
 		BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
-		ByteBuffer newMessage = snapshots[index] = BufferUtils
+		ByteBuffer newMessage = snapshots[index] = Utils
 				.messageToBuffer(message, null, kryoSerializer);
 
-		// only allow positive positions
-		if (curPos < 0) {
-			curPos = 0;
-		}
+		short diff = (short) (oldPos - ackPos);
 
-		if (ackPos < 0) {
+		/* The last received message is too old; send a full one */
+		if (diff < 0 || diff > snapshots.length) {
+			if (lOG.isLoggable(Level.INFO)) {
+				lOG.log(Level.INFO,
+						"The last acknowledged message is too old; sending a full one");
+			}
 			return LabeledMessage.POOL.obtain().set(oldPos, message);
 		}
 
-		/* Is the last received message too old? Send a full one */
-		if (oldPos - ackPos > snapshots.length
-				|| (ackPos - oldPos > Short.MAX_VALUE / 2 && Short.MAX_VALUE
-						- ackPos + oldPos > snapshots.length)) {
-			return LabeledMessage.POOL.obtain().set(oldPos, message);
-		}
-
-		ByteBuffer lastAckMessage = snapshots[ackPos % snapshots.length];
-		lastAckMessage.position(0); // could have been used before
+		/* Send a normal diff message */
+		ByteBuffer lastAckMessage = snapshots[Utils
+				.getIndexForPos(snapshots.length, ackPos)];
+		lastAckMessage.position(0); // the buffer could have been used before
 
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
@@ -108,27 +110,25 @@ public class DiffConnectionHandler<T> {
 	 * @return Number of messages left behind
 	 */
 	public int getLag() {
-		if (curPos >= ackPos) {
-			return curPos - ackPos;
-		}
-
-		return Short.MAX_VALUE - ackPos + curPos;
+		return Math.abs((short) (curPos - ackPos));
 	}
 
 	public void registerAck(short id) {
-		// because the array is cyclic, the id could be in front of the old
-		// ackPos, so we check if the difference between the two is very large (
-		// > 4 minutes at 60 fps).
-		if (id > ackPos || ackPos - id > Short.MAX_VALUE / 2) {
+		// because the ack-messages could arrive in the wrong order, we have to
+		// check if the received ack-message is the latest one
+		short diff = (short) (id - ackPos);
+
+		if (diff > 0) {
 			if (lOG.isLoggable(Level.FINER)) {
-				lOG.log(Level.FINER, "Client received message " + id);
+				lOG.log(Level.FINER, "Client acknowledged message " + id);
 			}
 			ackPos = id;
 			return;
 		}
 
 		if (lOG.isLoggable(Level.FINER)) {
-			lOG.log(Level.FINER, "Client received old message " + id);
+			lOG.log(Level.FINER, "Client acknowledged _old_ message " + id
+					+ " vs. current " + ackPos);
 		}
 	}
 

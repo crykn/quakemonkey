@@ -9,9 +9,9 @@ import com.esotericsoftware.kryo.io.Output;
 
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
-public class BufferUtils {
+public class Utils {
 
-	private BufferUtils() {
+	private Utils() {
 		// not used
 	}
 
@@ -45,5 +45,23 @@ public class BufferUtils {
 		buffer.position(0);
 
 		return buffer;
+	}
+
+	public static boolean isPowerOfTwo(int x) {
+		return (x & (x - 1)) == 0;
+	}
+
+	/**
+	 * @param mod
+	 *            Only powers of <code>2</code> are of use here.
+	 * @param val
+	 * @return
+	 */
+	public static int getIndexForPos(int mod, short val) {
+		if (val < 0) {
+			return Math.abs(Short.MIN_VALUE - val) % mod;
+		} else {
+			return val % mod;
+		}
 	}
 }
