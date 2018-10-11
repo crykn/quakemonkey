@@ -91,10 +91,9 @@ public class DiffConnectionHandler<T> {
 
 		/* The last received message is too old; send a full one */
 		if (diff < 0 || diff > snapshots.length) {
-			if (LOG.isLoggable(Level.INFO)) {
-				LOG.log(Level.INFO,
-						"The last acknowledged message is too old; sending a full one");
-			}
+			LOG.log(Level.INFO,
+					"The last acknowledged message is too old; sending a full one");
+
 			return PayloadPackage.POOL.obtain().set(oldPos, message);
 		}
 
@@ -189,9 +188,16 @@ public class DiffConnectionHandler<T> {
 
 		/* Check what is smaller, delta message or original buffer */
 		Object retMessage = null;
+		int msgSize = buffer.limit();
+		int diffSize = diffInts.remaining() * 4 + (diffInts.remaining() / 8)
+				+ 1;
 
-		if (alwaysSendDiff || (diffInts.remaining() * 4
-				+ diffInts.remaining() / 8 + 1) < buffer.limit()) {
+		if (Math.min(msgSize, diffSize) >= 1400) {
+			LOG.log(Level.FINE,
+					"The message size is above the approximated MTU. It is recommended to fragment the message.");
+		}
+
+		if (alwaysSendDiff || diffSize < msgSize) {
 			int diffDataSize = diffInts.remaining();
 			int[] diffData = BufferPool.DEFAULT.obtainIntArray(diffDataSize,
 					true);
@@ -201,10 +207,7 @@ public class DiffConnectionHandler<T> {
 			retMessage = DiffMessage.POOL.obtain().set(diffToId, flags,
 					diffData);
 		} else {
-			if (LOG.isLoggable(Level.FINE)) {
-				LOG.log(Level.FINE,
-						"The state message is smaller than the diff.");
-			}
+			LOG.log(Level.FINE, "The state message is smaller than the diff.");
 
 			retMessage = null;
 		}

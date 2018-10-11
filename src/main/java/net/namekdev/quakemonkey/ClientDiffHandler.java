@@ -147,15 +147,13 @@ public class ClientDiffHandler<T> {
 					(T) msg.getPayloadMessage(), kryoSerializer);
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
 			/* > Received a diff message */
-			if (LOG.isLoggable(Level.FINE)) {
-				ByteBuffer logBuffer = Utils.messageToBuffer(
-						msg.getPayloadMessage(), kryoSerializer);
-				LOG.log(Level.FINE,
-						"Received diff of size " + logBuffer.limit());
-				BufferPool.DEFAULT.freeByteBuffer(logBuffer);
-			}
-
 			DiffMessage diffMessage = (DiffMessage) msg.getPayloadMessage();
+
+			if (LOG.isLoggable(Level.FINE)) {
+				LOG.log(Level.FINE,
+						"Received diff message; it is based on snapshot "
+								+ diffMessage.getMessageId());
+			}
 
 			int oldIndex = Utils.getIndexForPos(snapshots.length,
 					diffMessage.getMessageId());

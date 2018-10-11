@@ -232,7 +232,8 @@ public class SerializationTests {
 
 		// Second state; diff is larger than the original message -> package
 		// holds the original message
-		position = Arrays.asList(new Integer[] { 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 });
+		position = Arrays.asList(
+				new Integer[] { 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 });
 		orientation = Arrays.asList(new Integer[] { 2, 2, 2, 2, 2, 2, 2 });
 		final GameStateMessage2 secondStateMessage = new GameStateMessage2(
 				position, orientation);

@@ -37,6 +37,9 @@ public class DiffMessage {
 		// default public constructor
 	}
 
+	/**
+	 * @return The ID of the message the diff is from.
+	 */
 	public short getMessageId() {
 		return messageId;
 	}
