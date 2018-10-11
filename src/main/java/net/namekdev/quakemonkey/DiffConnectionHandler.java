@@ -59,7 +59,9 @@ public class DiffConnectionHandler<T> {
 		snapshots = new ByteBuffer[snapshotHistoryCount];
 
 		curPos = 0;
-		ackPos = (short) (-snapshotHistoryCount - 1);
+		ackPos = (short) (-snapshotHistoryCount - 1); // needed, so the first
+														// message is always
+														// unacknowledged for
 	}
 
 	public DiffConnectionHandler(Kryo kryoSerializer, short numSnapshots) {
@@ -68,7 +70,8 @@ public class DiffConnectionHandler<T> {
 
 	/**
 	 * Adds a new message to the snapshot list and either returns the full
-	 * message or a delta message if the latter is possible.
+	 * message or a {@linkplain #generateDelta(ByteBuffer, ByteBuffer, short)
+	 * delta message} if the latter is possible and viable.
 	 * 
 	 * @param message
 	 *            Message to add to snapshot list
@@ -100,6 +103,8 @@ public class DiffConnectionHandler<T> {
 				.getIndexForPos(snapshots.length, ackPos)];
 		lastAckMessage.position(0); // the buffer could have been used before
 
+		// Generate the delta message; is null if the message itself is smaller
+		// (because of Kryo's serialization)
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
 		return QuakeMonkeyPackage.POOL.obtain().set(oldPos,

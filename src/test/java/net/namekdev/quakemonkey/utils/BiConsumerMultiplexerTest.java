@@ -31,7 +31,7 @@ public class BiConsumerMultiplexerTest {
 		mult.dispatch(3, 4);
 		assertEquals(12, i);
 		assertEquals(1, mult.size());
-		
+
 		// Add a consumer twice
 		mult.addBiConsumer(cons1);
 		assertEquals(1, mult.size());

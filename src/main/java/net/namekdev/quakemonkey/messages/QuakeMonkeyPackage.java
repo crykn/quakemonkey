@@ -29,10 +29,16 @@ public class QuakeMonkeyPackage {
 		// default public constructor
 	}
 
-	public short getLabel() {
+	/**
+	 * @return the identifier of this package.
+	 */
+	public short getId() {
 		return currentId;
 	}
 
+	/**
+	 * @return the payload message if this package.
+	 */
 	public Object getPayloadMessage() {
 		return message;
 	}

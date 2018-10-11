@@ -123,21 +123,21 @@ public class ClientDiffHandler<T> {
 	@SuppressWarnings("unchecked")
 	@VisibleForTesting
 	void processMessage(Connection con, QuakeMonkeyPackage msg) {
-		short diff = (short) (msg.getLabel() - curPos);
+		short diff = (short) (msg.getId() - curPos);
 
 		/* Message is too old; we already got a newer one */
 		if (diff < 0) {
 			if (LOG.isLoggable(Level.INFO)) {
 				LOG.log(Level.INFO,
 						"Discarding too old message; a newer one is already available: "
-								+ msg.getLabel() + " vs. current " + curPos);
+								+ msg.getId() + " vs. current " + curPos);
 			}
 			return;
 		}
 		// if (diff > snapshots.length)
 
 		/* Message is up to date */
-		int index = Utils.getIndexForPos(snapshots.length, msg.getLabel());
+		int index = Utils.getIndexForPos(snapshots.length, msg.getId());
 
 		if (cls.isInstance(msg.getPayloadMessage())) {
 			/* > Received a full message */
@@ -167,10 +167,10 @@ public class ClientDiffHandler<T> {
 		}
 
 		/* Send an ACK back */
-		con.sendUDP(AckMessage.POOL.obtain().set(msg.getLabel()));
+		con.sendUDP(AckMessage.POOL.obtain().set(msg.getId()));
 
 		/* Broadcast received changes to listeners */
-		curPos = msg.getLabel();
+		curPos = msg.getId();
 
 		Input input = new Input(snapshots[index].array());
 		input.setPosition(2); // skip size
