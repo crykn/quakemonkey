@@ -13,6 +13,9 @@ cache:
 before_install:
   - chmod +x gradlew
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 #addons:
 #  sonarcloud:
 #    organization: "xyz"

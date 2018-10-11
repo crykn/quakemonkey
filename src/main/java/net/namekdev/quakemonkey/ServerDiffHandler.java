@@ -12,7 +12,7 @@ import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
-import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
 import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
@@ -103,7 +103,7 @@ public class ServerDiffHandler<T> implements Listener {
 
 		DiffConnectionHandler<T> diffConnection = diffConnections
 				.get(connection);
-		LabeledMessage newMessage = diffConnection.generateSnapshot(msg);
+		QuakeMonkeyPackage newMessage = diffConnection.generateSnapshot(msg);
 		server.sendToUDP(connection.getID(), newMessage);
 
 		// Everything back to pools
@@ -115,7 +115,7 @@ public class ServerDiffHandler<T> implements Listener {
 			BufferPool.DEFAULT.freeIntArray(diffMessage.getData());
 			DiffMessage.POOL.free(diffMessage);
 		}
-		LabeledMessage.POOL.free(newMessage);
+		QuakeMonkeyPackage.POOL.free(newMessage);
 	}
 
 	/**

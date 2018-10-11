@@ -20,7 +20,7 @@ import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
-import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
 
 public class SerializationTests {
 	/**
@@ -36,18 +36,19 @@ public class SerializationTests {
 
 		// First server side
 		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
-				kryoSerializer, (short) 16);
+				kryoSerializer, (short) 4);
 		List<Float> position = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
 		List<Float> orientation = Arrays.asList(new Float[] { 0f, 0f, 1f });
 		byte id = (byte) 1;
 		final GameStateMessage message = new GameStateMessage("nmk", position,
 				orientation, id);
 
-		LabeledMessage messageToSend = diffConnection.generateSnapshot(message);
+		QuakeMonkeyPackage messageToSend = diffConnection
+				.generateSnapshot(message);
 
 		// Now client side
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
-				fakeClient, GameStateMessage.class, (short) 16);
+				fakeClient, GameStateMessage.class, (short) 4);
 
 		clientDiffHandler.addListener(
 				new BiConsumer<Connection, SerializationTests.GameStateMessage>() {
@@ -76,7 +77,7 @@ public class SerializationTests {
 		kryoSerializer.register(GameStateMessage.class);
 
 		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
-				kryoSerializer, (short) 20, true);
+				kryoSerializer, (short) 16, true);
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
 				fakeClient, GameStateMessage.class, (short) 16);
 		// ServerDiffHandler<GameStateMessage> serverDiffHandler = new
@@ -93,7 +94,7 @@ public class SerializationTests {
 		// should be: serverDiffHandler.dispatchMessage(fakeServer,
 		// fakeServer.getConnections(), message);
 		// but we'll do that directly
-		LabeledMessage firstMessage = (LabeledMessage) diffConnection
+		QuakeMonkeyPackage firstMessage = (QuakeMonkeyPackage) diffConnection
 				.generateSnapshot(message);
 
 		// Client acknowledges first message.
@@ -122,13 +123,13 @@ public class SerializationTests {
 		orientation.set(1, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 3);
-		final LabeledMessage thirdMessage = diffConnection
+		final QuakeMonkeyPackage thirdMessage = diffConnection
 				.generateSnapshot(message);
 
 		final GameStateMessage testMessage = message;
 
 		// Client receives snapshot delta based on 1st and 3rd gamestate.
-		LabeledMessage messageReceived = thirdMessage;
+		QuakeMonkeyPackage messageReceived = thirdMessage;
 
 		clientDiffHandler.addListener(
 				new BiConsumer<Connection, SerializationTests.GameStateMessage>() {
@@ -253,18 +254,6 @@ public class SerializationTests {
 
 				output.writeByte(object.id);
 			}
-		}
-	}
-
-	private static class FakeClient extends Client {
-		@Override
-		public int sendUDP(Object object) {
-			// do nothing for a testing purposes.
-			return 0;
-		}
-
-		@Override
-		public void addListener(Listener listener) {
 		}
 	}
 }

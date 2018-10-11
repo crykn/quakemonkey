@@ -19,7 +19,7 @@ public class AckMessage {
 
 				@Override
 				public void onFree(AckMessage obj) {
-					obj.id = 0;
+					// obj.id = 0;
 				}
 			});
 

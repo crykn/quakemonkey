@@ -31,7 +31,7 @@ public class Utils {
 	public static ByteBuffer messageToBuffer(Object message,
 			@Nullable ByteBuffer target, Kryo kryoSerializer) {
 		ByteBuffer buffer = target == null
-				? BufferPool.DEFAULT.obtainByteBuffer(Short.MAX_VALUE + 2)
+				? BufferPool.DEFAULT.obtainByteBuffer(Short.MAX_VALUE)
 				: target;
 
 		Output output = new Output(buffer.array());

@@ -5,7 +5,7 @@ import com.esotericsoftware.kryo.Kryo;
 import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
 import net.namekdev.quakemonkey.messages.DiffMessageSerializer;
-import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
 
 /**
  * Registers messages in the serializer that are required for the snapshot
@@ -33,6 +33,6 @@ public class DiffClassRegistration {
 	public static void registerClasses(Kryo kryoSerializer) {
 		kryoSerializer.register(DiffMessage.class, new DiffMessageSerializer());
 		kryoSerializer.register(AckMessage.class);
-		kryoSerializer.register(LabeledMessage.class);
+		kryoSerializer.register(QuakeMonkeyPackage.class);
 	}
 }

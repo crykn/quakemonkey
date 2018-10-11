@@ -10,7 +10,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.DiffMessage;
-import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
 import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
@@ -50,7 +50,9 @@ public class DiffConnectionHandler<T> {
 	public DiffConnectionHandler(Kryo kryoSerializer,
 			short snapshotHistoryCount, boolean alwaysSendDiff) {
 		Preconditions.checkNotNull(kryoSerializer);
-		Preconditions.checkArgument(snapshotHistoryCount >= 2);
+		Preconditions.checkArgument(snapshotHistoryCount >= 4);
+		Preconditions.checkArgument(Utils.isPowerOfTwo(snapshotHistoryCount),
+				"The snapshotHistoryCount has to be a power of two");
 
 		this.kryoSerializer = kryoSerializer;
 		this.alwaysSendDiff = alwaysSendDiff;
@@ -73,7 +75,7 @@ public class DiffConnectionHandler<T> {
 	 * @return {@code message} or a delta message
 	 */
 	@VisibleForTesting
-	LabeledMessage generateSnapshot(T message) {
+	QuakeMonkeyPackage generateSnapshot(T message) {
 		short oldPos = curPos;
 		curPos++;
 
@@ -90,7 +92,7 @@ public class DiffConnectionHandler<T> {
 				lOG.log(Level.INFO,
 						"The last acknowledged message is too old; sending a full one");
 			}
-			return LabeledMessage.POOL.obtain().set(oldPos, message);
+			return QuakeMonkeyPackage.POOL.obtain().set(oldPos, message);
 		}
 
 		/* Send a normal diff message */
@@ -100,7 +102,7 @@ public class DiffConnectionHandler<T> {
 
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
-		return LabeledMessage.POOL.obtain().set(oldPos,
+		return QuakeMonkeyPackage.POOL.obtain().set(oldPos,
 				delta == null ? message : delta);
 	}
 

@@ -15,7 +15,7 @@ import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
-import net.namekdev.quakemonkey.messages.LabeledMessage;
+import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
 import net.namekdev.quakemonkey.utils.BiConsumerMultiplexer;
 import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
@@ -70,8 +70,8 @@ public class ClientDiffHandler<T> {
 											// performance reasons
 			@Override
 			public void received(Connection connection, Object object) {
-				if (object instanceof LabeledMessage)
-					processMessage(connection, (LabeledMessage) object);
+				if (object instanceof QuakeMonkeyPackage)
+					processMessage(connection, (QuakeMonkeyPackage) object);
 			}
 		});
 	}
@@ -92,7 +92,7 @@ public class ClientDiffHandler<T> {
 	 *            The old message
 	 * @param diffMessage
 	 *            The delta message
-	 * @return A new message of type {@code T}. May be <code>null</code>.
+	 * @return A new message of type <code>T</code> as a ByteBuffer.
 	 */
 	private ByteBuffer mergeMessage(ByteBuffer oldMessage,
 			DiffMessage diffMessage) {
@@ -122,7 +122,7 @@ public class ClientDiffHandler<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	@VisibleForTesting
-	void processMessage(Connection con, LabeledMessage msg) {
+	void processMessage(Connection con, QuakeMonkeyPackage msg) {
 		short diff = (short) (msg.getLabel() - curPos);
 
 		/* Message is too old; we already got a newer one */

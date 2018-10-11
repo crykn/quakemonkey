@@ -21,7 +21,7 @@ public class MessagesTests {
 				diffMessage.toString());
 
 		// LabeledMessage
-		LabeledMessage labeledMessage = new LabeledMessage();
+		QuakeMonkeyPackage labeledMessage = new QuakeMonkeyPackage();
 		labeledMessage.set((short) 23, "testabc");
 		assertEquals("LabeledMessage { label: 23, payloadMessage: testabc}",
 				labeledMessage.toString());
