@@ -7,16 +7,16 @@ import net.namekdev.quakemonkey.utils.pool.Pool;
  * 
  * @author Ben Ruijl
  */
-public class QuakeMonkeyPackage {
-	public static final Pool<QuakeMonkeyPackage> POOL = new Pool<QuakeMonkeyPackage>(
-			new Pool.ObjectSupplier<QuakeMonkeyPackage>() {
+public class PayloadPackage {
+	public static final Pool<PayloadPackage> POOL = new Pool<PayloadPackage>(
+			new Pool.ObjectSupplier<PayloadPackage>() {
 				@Override
-				public QuakeMonkeyPackage newInstance() {
-					return new QuakeMonkeyPackage();
+				public PayloadPackage newInstance() {
+					return new PayloadPackage();
 				}
 
 				@Override
-				public void onFree(QuakeMonkeyPackage obj) {
+				public void onFree(PayloadPackage obj) {
 					obj.currentId = 0;
 					obj.message = null;
 				}
@@ -25,7 +25,7 @@ public class QuakeMonkeyPackage {
 	private short currentId;
 	private Object message;
 
-	public QuakeMonkeyPackage() {
+	public PayloadPackage() {
 		// default public constructor
 	}
 
@@ -46,7 +46,7 @@ public class QuakeMonkeyPackage {
 	/**
 	 * Method existing only for pooling.
 	 */
-	public QuakeMonkeyPackage set(short label, Object message) {
+	public PayloadPackage set(short label, Object message) {
 		this.currentId = label;
 		this.message = message;
 

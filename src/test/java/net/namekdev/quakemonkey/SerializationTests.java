@@ -14,7 +14,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 
-import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
+import net.namekdev.quakemonkey.messages.DiffMessage;
+import net.namekdev.quakemonkey.messages.PayloadPackage;
 
 public class SerializationTests {
 
@@ -39,7 +40,7 @@ public class SerializationTests {
 		Client client = createTestClient();
 
 		// First server side
-		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
+		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<>(
 				client.getKryo(), (short) 4);
 		List<Float> position = Arrays.asList(new Float[] { 0.5f, 0.6f, 0.7f });
 		List<Float> orientation = Arrays.asList(new Float[] { 0f, 0f, 1f });
@@ -47,11 +48,10 @@ public class SerializationTests {
 		final GameStateMessage message = new GameStateMessage("nmk", position,
 				orientation, id);
 
-		QuakeMonkeyPackage messageToSend = diffConnection
-				.generateSnapshot(message);
+		PayloadPackage messageToSend = diffConnection.generateSnapshot(message);
 
 		// Now client side
-		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
+		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<>(
 				client, GameStateMessage.class, (short) 4);
 
 		clientDiffHandler
@@ -63,7 +63,7 @@ public class SerializationTests {
 				});
 
 		// will call listener above
-		clientDiffHandler.processMessage(client, messageToSend);
+		clientDiffHandler.processPackage(client, messageToSend);
 	}
 
 	/**
@@ -77,9 +77,9 @@ public class SerializationTests {
 	public void snapshotDiffTest() throws TimeoutException {
 		final Client client = createTestClient();
 
-		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<GameStateMessage>(
+		DiffConnectionHandler<GameStateMessage> diffConnection = new DiffConnectionHandler<>(
 				client.getKryo(), (short) 16, true);
-		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<GameStateMessage>(
+		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<>(
 				client, GameStateMessage.class, (short) 16);
 		// ServerDiffHandler<GameStateMessage> serverDiffHandler = new
 		// ServerDiffHandler<SerializationTests.GameStateMessage>(new
@@ -95,13 +95,13 @@ public class SerializationTests {
 		// should be: serverDiffHandler.dispatchMessage(fakeServer,
 		// fakeServer.getConnections(), message);
 		// but we'll do that directly
-		QuakeMonkeyPackage firstMessage = (QuakeMonkeyPackage) diffConnection
+		PayloadPackage firstMessage = (PayloadPackage) diffConnection
 				.generateSnapshot(message);
 
 		// Client acknowledges first message.
 		// should be: fakeClient.sendUDP(new
 		// AckMessage(firstMessage.getLabel()));
-		clientDiffHandler.processMessage(client, firstMessage);
+		clientDiffHandler.processPackage(client, firstMessage);
 		diffConnection.registerAck(firstMessage.getId());
 
 		// Server sends second gamestate (Orientation: 1 0 1)
@@ -124,13 +124,13 @@ public class SerializationTests {
 		orientation.set(1, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 3);
-		final QuakeMonkeyPackage thirdMessage = diffConnection
+		final PayloadPackage thirdMessage = diffConnection
 				.generateSnapshot(message);
 
 		final GameStateMessage testMessage = message;
 
 		// Client receives snapshot delta based on 1st and 3rd gamestate.
-		QuakeMonkeyPackage messageReceived = thirdMessage;
+		PayloadPackage messageReceived = thirdMessage;
 
 		clientDiffHandler
 				.addListener(new BiConsumer<Connection, GameStateMessage>() {
@@ -143,14 +143,15 @@ public class SerializationTests {
 						assertEquals(msg.getName(), msg.getName());
 					}
 				});
+
 		// will call listener above
-		clientDiffHandler.processMessage(client, messageReceived);
+		clientDiffHandler.processPackage(client, messageReceived);
 	}
 
 	@Test
 	public void testTooLargeAck() {
 		Client client = createTestClient();
-		DiffConnectionHandler<GameStateMessage2> severDiffConnection = new DiffConnectionHandler<GameStateMessage2>(
+		DiffConnectionHandler<GameStateMessage2> severDiffConnection = new DiffConnectionHandler<>(
 				client.getKryo(), (short) 4);
 
 		int previousLag = severDiffConnection.getLag();
@@ -158,6 +159,49 @@ public class SerializationTests {
 
 		// Should not have changed, as the id was too low
 		assertEquals(previousLag, severDiffConnection.getLag());
+	}
+
+	@Test
+	public void testDifferentArrayLengths() {
+		// Setup everything
+		Client client = createTestClient();
+		DiffConnectionHandler<GameStateMessage> severDiffConnection = new DiffConnectionHandler<>(
+				client.getKryo(), (short) 4);
+		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<>(
+				client, GameStateMessage.class, (short) 16);
+
+		// First state; simulate send, receive & ack
+		List<Float> position = Arrays.asList(new Float[] { 1f, 1f, 1f, 1f });
+		List<Float> orientation = Arrays.asList(new Float[] { 1f, 1f, 1f, 1f });
+		final GameStateMessage gameStateMessage = new GameStateMessage(
+				"asdfghjkl", position, orientation, (byte) 1);
+
+		PayloadPackage firstPackage = severDiffConnection
+				.generateSnapshot(gameStateMessage);
+
+		clientDiffHandler.processPackage(client, firstPackage);
+		severDiffConnection.registerAck(firstPackage.getId());
+
+		// Second state; check if this one is received properly
+		position = Arrays.asList(new Float[] { 2f, 2f });
+		orientation = Arrays.asList(new Float[] { 2f, 2f });
+		final GameStateMessage secondStateMessage = new GameStateMessage(
+				"asdfghjkl", position, orientation, (byte) 1);
+
+		PayloadPackage secondPackage = severDiffConnection
+				.generateSnapshot(secondStateMessage);
+
+		assertEquals(DiffMessage.class,
+				secondPackage.getPayloadMessage().getClass());
+
+		clientDiffHandler
+				.addListener(new BiConsumer<Connection, GameStateMessage>() {
+					@Override
+					public void accept(Connection arg0, GameStateMessage msg) {
+						assertEquals(secondStateMessage, msg);
+					}
+				});
+		clientDiffHandler.processPackage(client, secondPackage);
 	}
 
 	/**
@@ -172,12 +216,13 @@ public class SerializationTests {
 				client.getKryo(), (short) 4);
 
 		// First state; simulate send & ack
-		List<Integer> position = Arrays.asList(new Integer[] { 1, 1, 1 });
-		List<Integer> orientation = Arrays.asList(new Integer[] { 1, 1, 1 });
+		List<Integer> position = Arrays.asList(new Integer[] { 1, 1, 1, 1, 1 });
+		List<Integer> orientation = Arrays
+				.asList(new Integer[] { 1, 1, 1, 1, 1 });
 		final GameStateMessage2 gameStateMessage = new GameStateMessage2(
 				position, orientation);
 
-		QuakeMonkeyPackage firstPackage = severDiffConnection
+		PayloadPackage firstPackage = severDiffConnection
 				.generateSnapshot(gameStateMessage);
 
 		assertEquals(GameStateMessage2.class,
@@ -187,12 +232,12 @@ public class SerializationTests {
 
 		// Second state; diff is larger than the original message -> package
 		// holds the original message
-		position = Arrays.asList(new Integer[] { 2, 2 });
-		orientation = Arrays.asList(new Integer[] { 2, 2 });
+		position = Arrays.asList(new Integer[] { 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 });
+		orientation = Arrays.asList(new Integer[] { 2, 2, 2, 2, 2, 2, 2 });
 		final GameStateMessage2 secondStateMessage = new GameStateMessage2(
 				position, orientation);
 
-		QuakeMonkeyPackage secondPackage = severDiffConnection
+		PayloadPackage secondPackage = severDiffConnection
 				.generateSnapshot(secondStateMessage);
 
 		assertEquals(GameStateMessage2.class,
@@ -216,7 +261,7 @@ public class SerializationTests {
 				position, orientation);
 
 		// First package; ack
-		QuakeMonkeyPackage firstPckg = severDiffConnection
+		PayloadPackage firstPckg = severDiffConnection
 				.generateSnapshot(gameStateMessage);
 		severDiffConnection.registerAck(firstPckg.getId());
 

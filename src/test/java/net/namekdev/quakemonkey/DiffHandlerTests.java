@@ -11,7 +11,7 @@ import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Server;
 
-import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
+import net.namekdev.quakemonkey.messages.PayloadPackage;
 
 public class DiffHandlerTests {
 
@@ -44,10 +44,10 @@ public class DiffHandlerTests {
 		diff.addListener(b);
 		diff.removeListener(b);
 
-		QuakeMonkeyPackage q = new QuakeMonkeyPackage();
+		PayloadPackage q = new PayloadPackage();
 		q.set((short) 0, "testString");
 
-		diff.processMessage(new FakeClient(), q);
+		diff.processPackage(new FakeClient(), q);
 	}
 
 }

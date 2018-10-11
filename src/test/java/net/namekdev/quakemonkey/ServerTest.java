@@ -17,7 +17,7 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
-import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
+import net.namekdev.quakemonkey.messages.PayloadPackage;
 
 public class ServerTest {
 	private int serverTicks = 0;
@@ -115,7 +115,7 @@ public class ServerTest {
 
 				// Send an old message
 				if (wrongSendIndices.contains(serverTicks)) {
-					server.sendToAllUDP(QuakeMonkeyPackage.POOL.obtain()
+					server.sendToAllUDP(PayloadPackage.POOL.obtain()
 							.set((short) (serverTicks - 20), newMessage));
 					System.out.println(
 							"Old message " + (serverTicks - 20) + " sent");

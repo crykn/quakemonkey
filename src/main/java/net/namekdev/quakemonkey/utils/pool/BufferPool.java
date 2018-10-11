@@ -42,7 +42,6 @@ public class BufferPool {
 				array = new byte[size];
 			}
 
-			assert (array != null);
 			return array;
 		}
 	}
@@ -69,7 +68,6 @@ public class BufferPool {
 				array = new int[size];
 			}
 
-			assert (array != null);
 			return array;
 		}
 	}
@@ -96,7 +94,6 @@ public class BufferPool {
 				buffer = ByteBuffer.allocate(size);
 			}
 
-			assert (buffer != null);
 			return buffer;
 		}
 	}
@@ -123,7 +120,6 @@ public class BufferPool {
 				buffer = IntBuffer.allocate(size);
 			}
 
-			assert (buffer != null);
 			return buffer;
 		}
 	}

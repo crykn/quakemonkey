@@ -10,7 +10,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.DiffMessage;
-import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
+import net.namekdev.quakemonkey.messages.PayloadPackage;
 import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
 
@@ -25,7 +25,7 @@ import net.namekdev.quakemonkey.utils.pool.BufferPool;
  *            Message type
  */
 public class DiffConnectionHandler<T> {
-	protected static final Logger lOG = Logger
+	protected static final Logger LOG = Logger
 			.getLogger(DiffConnectionHandler.class.getName());
 	private final Kryo kryoSerializer;
 	private final ByteBuffer[] snapshots;
@@ -78,24 +78,24 @@ public class DiffConnectionHandler<T> {
 	 * @return {@code message} or a delta message
 	 */
 	@VisibleForTesting
-	QuakeMonkeyPackage generateSnapshot(T message) {
+	PayloadPackage generateSnapshot(T message) {
 		short oldPos = curPos;
 		curPos++;
 
 		int index = Utils.getIndexForPos(snapshots.length, oldPos);
 		BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
 		ByteBuffer newMessage = snapshots[index] = Utils
-				.messageToBuffer(message, null, kryoSerializer);
+				.messageToBuffer(message, kryoSerializer);
 
 		short diff = (short) (oldPos - ackPos);
 
 		/* The last received message is too old; send a full one */
 		if (diff < 0 || diff > snapshots.length) {
-			if (lOG.isLoggable(Level.INFO)) {
-				lOG.log(Level.INFO,
+			if (LOG.isLoggable(Level.INFO)) {
+				LOG.log(Level.INFO,
 						"The last acknowledged message is too old; sending a full one");
 			}
-			return QuakeMonkeyPackage.POOL.obtain().set(oldPos, message);
+			return PayloadPackage.POOL.obtain().set(oldPos, message);
 		}
 
 		/* Send a normal diff message */
@@ -107,7 +107,7 @@ public class DiffConnectionHandler<T> {
 		// (because of Kryo's serialization)
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
-		return QuakeMonkeyPackage.POOL.obtain().set(oldPos,
+		return PayloadPackage.POOL.obtain().set(oldPos,
 				delta == null ? message : delta);
 	}
 
@@ -126,15 +126,15 @@ public class DiffConnectionHandler<T> {
 		short diff = (short) (id - ackPos);
 
 		if (diff > 0) {
-			if (lOG.isLoggable(Level.FINER)) {
-				lOG.log(Level.FINER, "Client acknowledged message " + id);
+			if (LOG.isLoggable(Level.FINER)) {
+				LOG.log(Level.FINER, "Client acknowledged message " + id);
 			}
 			ackPos = id;
 			return;
 		}
 
-		if (lOG.isLoggable(Level.FINER)) {
-			lOG.log(Level.FINER, "Client acknowledged _old_ message " + id
+		if (LOG.isLoggable(Level.FINER)) {
+			LOG.log(Level.FINER, "Client acknowledged _old_ message " + id
 					+ " vs. current " + ackPos);
 		}
 	}
@@ -144,16 +144,20 @@ public class DiffConnectionHandler<T> {
 	 * <code>prevMessage</code> or just <code>message</code> if that happens to
 	 * be smaller.
 	 * 
-	 * @param message
-	 *            Message to send
-	 * @param prevMessage
-	 *            Previous message
+	 * @param buffer
+	 *            Message to send as a ByteBuffer
+	 * @param previousBuffer
+	 *            The last acknowledged message as a ByteBuffer
+	 * @param diffToId
+	 *            The id of the previous message.
 	 * @return
 	 * @see #alwaysSendDiff
 	 */
 	private Object generateDelta(ByteBuffer buffer, ByteBuffer previousBuffer,
-			short prevID) {
-		int intBound = (int) (Math.ceil(buffer.remaining() / 4)) * 4;
+			short diffToId) {
+		int intBound = (int) (Math.ceil(
+				Math.max(buffer.remaining(), previousBuffer.remaining()) / 4f))
+				* 4;
 		previousBuffer.limit(intBound);
 		buffer.limit(intBound); // set buffers to be the same size
 
@@ -171,9 +175,11 @@ public class DiffConnectionHandler<T> {
 			int val = buffer.getInt();
 			if (previousBuffer.remaining() < 4
 					|| val != previousBuffer.getInt()) {
+				// diff detected
 				diffInts.put(val);
 				flags[i / 8] |= 1 << (i % 8);
 			} else {
+				// same content -> no diff
 				flags[i / 8] &= ~(1 << (i % 8));
 			}
 			i++;
@@ -192,8 +198,14 @@ public class DiffConnectionHandler<T> {
 
 			diffInts.get(diffData, 0, diffDataSize);
 
-			retMessage = DiffMessage.POOL.obtain().set(prevID, flags, diffData);
+			retMessage = DiffMessage.POOL.obtain().set(diffToId, flags,
+					diffData);
 		} else {
+			if (LOG.isLoggable(Level.FINE)) {
+				LOG.log(Level.FINE,
+						"The state message is smaller than the diff.");
+			}
+
 			retMessage = null;
 		}
 

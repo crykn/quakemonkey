@@ -2,8 +2,6 @@ package net.namekdev.quakemonkey.utils;
 
 import java.nio.ByteBuffer;
 
-import javax.annotation.Nullable;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
@@ -20,19 +18,19 @@ public class Utils {
 	 * 
 	 * @param message
 	 *            The actual message.
-	 * @param target
-	 *            The buffer the message should get packed in. <code>null</code>
-	 *            if a new one should get created.
 	 * @param kryoSerializer
 	 *            The kryo instance used to serialize the message.
 	 * @return A buffer containing the serialized message preceded by a
 	 *         <code>short</code> denoting the length of the object.
 	 */
 	public static ByteBuffer messageToBuffer(Object message,
-			@Nullable ByteBuffer target, Kryo kryoSerializer) {
-		ByteBuffer buffer = target == null
-				? BufferPool.DEFAULT.obtainByteBuffer(Short.MAX_VALUE)
-				: target;
+			/* @Nullable ByteBuffer target, */ Kryo kryoSerializer) {
+		/*
+		 * ByteBuffer buffer = target == null ?
+		 * BufferPool.DEFAULT.obtainByteBuffer(Short.MAX_VALUE) : target;
+		 */
+		ByteBuffer buffer = BufferPool.DEFAULT
+				.obtainByteBuffer(Short.MAX_VALUE);
 
 		Output output = new Output(buffer.array());
 

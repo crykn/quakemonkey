@@ -15,7 +15,7 @@ import com.google.common.base.Preconditions;
 
 import net.namekdev.quakemonkey.messages.AckMessage;
 import net.namekdev.quakemonkey.messages.DiffMessage;
-import net.namekdev.quakemonkey.messages.QuakeMonkeyPackage;
+import net.namekdev.quakemonkey.messages.PayloadPackage;
 import net.namekdev.quakemonkey.utils.BiConsumerMultiplexer;
 import net.namekdev.quakemonkey.utils.Utils;
 import net.namekdev.quakemonkey.utils.pool.BufferPool;
@@ -70,8 +70,8 @@ public class ClientDiffHandler<T> {
 											// performance reasons
 			@Override
 			public void received(Connection connection, Object object) {
-				if (object instanceof QuakeMonkeyPackage)
-					processMessage(connection, (QuakeMonkeyPackage) object);
+				if (object instanceof PayloadPackage)
+					processPackage(connection, (PayloadPackage) object);
 			}
 		});
 	}
@@ -96,15 +96,15 @@ public class ClientDiffHandler<T> {
 	 */
 	private ByteBuffer mergeMessage(ByteBuffer oldMessage,
 			DiffMessage diffMessage) {
-		// Copy old message
-		ByteBuffer newBuffer = BufferPool.DEFAULT
-				.obtainByteBuffer(oldMessage.remaining());
-		newBuffer.put(oldMessage);
-		newBuffer.position(0);
-
 		byte[] diffFlags = diffMessage.getFlags();
 		int[] diffData = diffMessage.getData();
 		int dataIndex = 0;
+
+		// Copy old message
+		ByteBuffer newBuffer = BufferPool.DEFAULT.obtainByteBuffer(
+				Math.max(oldMessage.remaining(), 8 * diffFlags.length * 4));
+		newBuffer.put(oldMessage);
+		newBuffer.position(0);
 
 		for (int i = 0; i < 8 * diffFlags.length; i++) {
 			if ((diffFlags[i / 8] & (1 << (i % 8))) != 0) {
@@ -122,7 +122,7 @@ public class ClientDiffHandler<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	@VisibleForTesting
-	void processMessage(Connection con, QuakeMonkeyPackage msg) {
+	void processPackage(Connection con, PayloadPackage msg) {
 		short diff = (short) (msg.getId() - curPos);
 
 		/* Message is too old; we already got a newer one */
@@ -144,12 +144,12 @@ public class ClientDiffHandler<T> {
 			BufferPool.DEFAULT.freeByteBuffer(snapshots[index]);
 
 			snapshots[index] = Utils.messageToBuffer(
-					(T) msg.getPayloadMessage(), null, kryoSerializer);
+					(T) msg.getPayloadMessage(), kryoSerializer);
 		} else if (msg.getPayloadMessage() instanceof DiffMessage) {
 			/* > Received a diff message */
 			if (LOG.isLoggable(Level.FINE)) {
 				ByteBuffer logBuffer = Utils.messageToBuffer(
-						msg.getPayloadMessage(), null, kryoSerializer);
+						msg.getPayloadMessage(), kryoSerializer);
 				LOG.log(Level.FINE,
 						"Received diff of size " + logBuffer.limit());
 				BufferPool.DEFAULT.freeByteBuffer(logBuffer);

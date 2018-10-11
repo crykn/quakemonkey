@@ -79,12 +79,12 @@ public class GameStateMessage2 {
 
 			int n = input.readShort();
 			for (int i = 0; i < n; ++i) {
-				position.add(input.readInt());
+				position.add(input.readInt(true));
 			}
 
 			n = input.readShort();
 			for (int i = 0; i < n; ++i) {
-				orientation.add(input.readInt());
+				orientation.add(input.readInt(true));
 			}
 
 			return new GameStateMessage2(position, orientation);
@@ -95,13 +95,13 @@ public class GameStateMessage2 {
 			int n = object.position.size();
 			output.writeShort(n);
 			for (int i = 0; i < n; ++i) {
-				output.writeInt(object.position.get(i));
+				output.writeInt(object.position.get(i), true);
 			}
 
 			n = object.orientation.size();
 			output.writeShort(n);
 			for (int i = 0; i < n; ++i) {
-				output.writeInt(object.orientation.get(i));
+				output.writeInt(object.orientation.get(i), true);
 			}
 		}
 	}
