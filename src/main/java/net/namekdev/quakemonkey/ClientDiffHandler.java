@@ -171,8 +171,6 @@ public class ClientDiffHandler<T> {
 		curPos = msg.getId();
 
 		Input input = new Input(snapshots[index].array());
-		input.setPosition(2); // skip size
-
 		listeners.dispatch(con, (T) kryoSerializer.readClassAndObject(input));
 	}
 }

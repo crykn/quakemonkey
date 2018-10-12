@@ -34,13 +34,13 @@ public class Utils {
 
 		Output output = new Output(buffer.array());
 
-		output.setPosition(2);
+		//output.setPosition(2);
 		kryoSerializer.writeClassAndObject(output, message);
 		buffer.position(output.position());
 		buffer.flip();
-		short dataLength = (short) (buffer.remaining() - 2);
-		buffer.putShort(dataLength);
-		buffer.position(0);
+		//short dataLength = (short) (buffer.remaining() - 2);
+		//buffer.putShort(dataLength);
+		//buffer.position(0);
 
 		return buffer;
 	}

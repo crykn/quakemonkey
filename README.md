@@ -8,7 +8,9 @@ Quakemonkey makes your life easier, because you don't have to figure out for you
 
 ## Features
 
-Quakemonkey works by looking at the bytes of a serialized gamestate message: These are looked at in blocks of four. If one of those blocks is the same as in the previous message it is not sent again. To indicate this to the client the message includes one bit for every block, that denotes whether this section was sent again or the previously received data can be used. For more information about snapshot compression take a look at [this post](https://gafferongames.com/post/snapshot_compression/).
+Quakemonkey works by looking at the bytes of a serialized gamestate message: These are looked at in blocks of four. If one of those blocks is the same as in the previous message it is not sent again. To indicate this to the client the message includes one bit for every block, that denotes whether this section was sent again or the previously received data can be used. To understand this process just take a look at the following example (an in-depth explanation of it can be found [here](https://github.com/crykn/quakemonkey/wiki)):
+
+![Delta-Snapshot Compression](https://github.com/crykn/quakemonkey/functionalty.png)
 
 Because the snapshot mechanism is implemented at byte level - i.e. when the messages are serialized to a byte buffer - no modifications to your messages are required to use quakemonkey in your existing code. It just works! 
 

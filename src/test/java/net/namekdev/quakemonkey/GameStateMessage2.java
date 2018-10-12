@@ -71,12 +71,24 @@ public class GameStateMessage2 {
 
 	public static class GameState2Serializer
 			extends Serializer<GameStateMessage2> {
+		
+		private final boolean useCompression;
+		
+		public GameState2Serializer(boolean useCompression) {
+			this.useCompression = useCompression;
+		}
+		
+		public GameState2Serializer() {
+			this(true);
+		}
+		
 		@Override
 		public GameStateMessage2 read(Kryo kryo, Input input,
 				Class<? extends GameStateMessage2> cls) {
 			List<Integer> position = new ArrayList<Integer>();
 			List<Integer> orientation = new ArrayList<Integer>();
-
+			input.setVariableLengthEncoding(useCompression);
+			
 			int n = input.readShort();
 			for (int i = 0; i < n; ++i) {
 				position.add(input.readInt(true));
@@ -92,7 +104,10 @@ public class GameStateMessage2 {
 
 		@Override
 		public void write(Kryo kryo, Output output, GameStateMessage2 object) {
+			output.setVariableLengthEncoding(useCompression);
+			
 			int n = object.position.size();
+			
 			output.writeShort(n);
 			for (int i = 0; i < n; ++i) {
 				output.writeInt(object.position.get(i), true);
