@@ -20,8 +20,7 @@ public class Utils {
 	 *            The actual message.
 	 * @param kryoSerializer
 	 *            The kryo instance used to serialize the message.
-	 * @return A buffer containing the serialized message preceded by a
-	 *         <code>short</code> denoting the length of the object.
+	 * @return A buffer containing the serialized message.
 	 */
 	public static ByteBuffer messageToBuffer(Object message,
 			/* @Nullable ByteBuffer target, */ Kryo kryoSerializer) {
@@ -34,26 +33,38 @@ public class Utils {
 
 		Output output = new Output(buffer.array());
 
-		//output.setPosition(2);
+		// output.setPosition(2);
 		kryoSerializer.writeClassAndObject(output, message);
 		buffer.position(output.position());
 		buffer.flip();
-		//short dataLength = (short) (buffer.remaining() - 2);
-		//buffer.putShort(dataLength);
-		//buffer.position(0);
+		// short dataLength = (short) (buffer.remaining() - 2);
+		// buffer.putShort(dataLength);
+		// buffer.position(0);
 
 		return buffer;
 	}
 
+	/**
+	 * @param x
+	 * @return whether <code>x</code> is a power of two.
+	 */
 	public static boolean isPowerOfTwo(int x) {
 		return (x & (x - 1)) == 0;
 	}
 
 	/**
+	 * Converts a short value to a cyclic index for an array with the size
+	 * <code>mod</code>.
+	 * <p>
+	 * The cyclic property requires powers of two as a size so the edge cases
+	 * (i.e. <code>Short.MAX_VALUE + 1</code>) are handled properly.
+	 * 
 	 * @param mod
-	 *            Only powers of <code>2</code> are of use here.
+	 *            The array size. Only powers of <code>2</code> are of use here.
 	 * @param val
-	 * @return
+	 *            The current value that should get converted to the cyclic
+	 *            index.
+	 * @return The cyclic index.
 	 */
 	public static int getIndexForPos(int mod, short val) {
 		if (val < 0) {

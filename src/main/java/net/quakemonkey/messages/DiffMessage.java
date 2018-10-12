@@ -53,7 +53,14 @@ public class DiffMessage {
 	}
 
 	/**
-	 * Method existing only for pooling.
+	 * Sets the properties of this message.
+	 * <p>
+	 * Utility method for the {@linkplain #POOL pool}.
+	 *
+	 * @param id
+	 * @param flag
+	 * @param data
+	 * @return
 	 */
 	public DiffMessage set(short id, byte[] flag, int[] data) {
 		this.messageId = id;

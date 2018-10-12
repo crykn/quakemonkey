@@ -44,7 +44,13 @@ public class PayloadPackage {
 	}
 
 	/**
-	 * Method existing only for pooling.
+	 * Sets the properties of this message.
+	 * <p>
+	 * Utility method for the {@linkplain #POOL pool}.
+	 * 
+	 * @param label
+	 * @param message
+	 * @return
 	 */
 	public PayloadPackage set(short label, Object message) {
 		this.currentId = label;

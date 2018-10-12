@@ -5,6 +5,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.google.common.base.Preconditions;
 
+/**
+ * A simple pool implementation for objects.
+ *
+ * @param <T>
+ * @see ObjectSupplier
+ */
 public class Pool<T> {
 	private final Queue<T> objPool;
 	private final ObjectSupplier<T> objSupplier;
@@ -19,7 +25,6 @@ public class Pool<T> {
 	}
 
 	/**
-	 * 
 	 * @return Obtains an object reference saved in the pool or a newly
 	 *         instantiated object if the pool is empty.
 	 */
@@ -46,6 +51,12 @@ public class Pool<T> {
 		objPool.add(obj);
 	}
 
+	/**
+	 * This object supplier takes care of creating new and freeing obtained
+	 * objects in a pool.
+	 * 
+	 * @param <T>
+	 */
 	public static interface ObjectSupplier<T> {
 		public T newInstance();
 

@@ -33,6 +33,14 @@ public class AckMessage {
 		return id;
 	}
 
+	/**
+	 * Sets the properties of this message.
+	 * <p>
+	 * Utility method for the {@linkplain #POOL pool}.
+	 * 
+	 * @param id
+	 * @return
+	 */
 	public AckMessage set(short id) {
 		this.id = id;
 

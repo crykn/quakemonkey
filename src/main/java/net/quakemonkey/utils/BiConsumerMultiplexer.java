@@ -35,6 +35,13 @@ public class BiConsumerMultiplexer<A, B> {
 		listeners.clear();
 	}
 
+	/**
+	 * Dispatches a message to the registered {@link BiConsumer}s.
+	 * 
+	 * @param a
+	 * @param b
+	 * @see BiConsumer#accept(Object, Object)
+	 */
 	public void dispatch(A a, B b) {
 		for (BiConsumer<A, B> consumer : listeners) {
 			consumer.accept(a, b);
