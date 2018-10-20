@@ -1,3 +1,0 @@
-[submodule "lib/kryonet"]
-	path = lib/kryonet
-	url = https://github.com/EsotericSoftware/kryonet.git
