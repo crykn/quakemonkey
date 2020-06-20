@@ -13,7 +13,7 @@ public class MessagesTests {
 		ackMessage.set((short) 3);
 		assertEquals("AckMessage { id: 3}", ackMessage.toString());
 
-		// test onFree
+		// Test onFree()
 		AckMessage.POOL.free(ackMessage);
 		assertEquals((short) 0, ackMessage.getId());
 
@@ -24,10 +24,10 @@ public class MessagesTests {
 		assertEquals("DiffMessage { id: 5, flags: [12], data: [3, 6, 88]}",
 				diffMessage.toString());
 
-		// LabeledMessage
+		// PayloadMessage
 		PayloadMessage labeledMessage = new PayloadMessage();
 		labeledMessage.set((short) 23, "testabc");
-		assertEquals("LabeledMessage { label: 23, payloadMessage: testabc}",
+		assertEquals("PayloadMessage { id: 23, payload: testabc}",
 				labeledMessage.toString());
 	}
 
