@@ -10,7 +10,7 @@ import net.quakemonkey.utils.pool.Pool;
  * 
  * @author Ben Ruijl
  */
-public class DiffMessage {
+public final class DiffMessage {
 	public static final Pool<DiffMessage> POOL = new Pool<DiffMessage>(
 			new Pool.ObjectSupplier<DiffMessage>() {
 				@Override

@@ -15,7 +15,7 @@ import com.google.common.base.Preconditions;
 
 import net.quakemonkey.messages.AckMessage;
 import net.quakemonkey.messages.DiffMessage;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 import net.quakemonkey.utils.BiConsumerMultiplexer;
 import net.quakemonkey.utils.Utils;
 import net.quakemonkey.utils.pool.BufferPool;
@@ -70,8 +70,8 @@ public class ClientDiffHandler<T> {
 											// performance reasons
 			@Override
 			public void received(Connection connection, Object object) {
-				if (object instanceof PayloadPackage)
-					processPackage(connection, (PayloadPackage) object);
+				if (object instanceof PayloadMessage)
+					processPackage(connection, (PayloadMessage) object);
 			}
 		});
 	}
@@ -122,7 +122,7 @@ public class ClientDiffHandler<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	@VisibleForTesting
-	void processPackage(Connection con, PayloadPackage msg) {
+	void processPackage(Connection con, PayloadMessage msg) {
 		short diff = (short) (msg.getId() - curPos);
 
 		/* Message is too old; we already got a newer one */

@@ -9,7 +9,7 @@ import net.quakemonkey.utils.pool.Pool;
  * @author Ben Ruijl
  * 
  */
-public class AckMessage {
+public final class AckMessage {
 	public static final Pool<AckMessage> POOL = new Pool<AckMessage>(
 			new Pool.ObjectSupplier<AckMessage>() {
 				@Override

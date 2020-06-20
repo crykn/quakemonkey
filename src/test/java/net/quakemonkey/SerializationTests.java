@@ -18,7 +18,7 @@ import net.quakemonkey.ClientDiffHandler;
 import net.quakemonkey.DiffClassRegistration;
 import net.quakemonkey.DiffConnectionHandler;
 import net.quakemonkey.messages.DiffMessage;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 
 public class SerializationTests {
 
@@ -51,7 +51,7 @@ public class SerializationTests {
 		final GameStateMessage message = new GameStateMessage("nmk", position,
 				orientation, id);
 
-		PayloadPackage messageToSend = diffConnection.generateSnapshot(message);
+		PayloadMessage messageToSend = diffConnection.generateSnapshot(message);
 
 		// Now client side
 		ClientDiffHandler<GameStateMessage> clientDiffHandler = new ClientDiffHandler<>(
@@ -98,7 +98,7 @@ public class SerializationTests {
 		// should be: serverDiffHandler.dispatchMessage(fakeServer,
 		// fakeServer.getConnections(), message);
 		// but we'll do that directly
-		PayloadPackage firstMessage = (PayloadPackage) diffConnection
+		PayloadMessage firstMessage = (PayloadMessage) diffConnection
 				.generateSnapshot(message);
 
 		// Client acknowledges first message.
@@ -127,13 +127,13 @@ public class SerializationTests {
 		orientation.set(1, 1f);
 		message = new GameStateMessage("" + name, position, orientation,
 				(byte) 3);
-		final PayloadPackage thirdMessage = diffConnection
+		final PayloadMessage thirdMessage = diffConnection
 				.generateSnapshot(message);
 
 		final GameStateMessage testMessage = message;
 
 		// Client receives snapshot delta based on 1st and 3rd gamestate.
-		PayloadPackage messageReceived = thirdMessage;
+		PayloadMessage messageReceived = thirdMessage;
 
 		clientDiffHandler
 				.addListener(new BiConsumer<Connection, GameStateMessage>() {
@@ -179,7 +179,7 @@ public class SerializationTests {
 		final GameStateMessage gameStateMessage = new GameStateMessage(
 				"asdfghjkl", position, orientation, (byte) 1);
 
-		PayloadPackage firstPackage = severDiffConnection
+		PayloadMessage firstPackage = severDiffConnection
 				.generateSnapshot(gameStateMessage);
 
 		clientDiffHandler.processPackage(client, firstPackage);
@@ -191,7 +191,7 @@ public class SerializationTests {
 		final GameStateMessage secondStateMessage = new GameStateMessage(
 				"asdfghjkl", position, orientation, (byte) 1);
 
-		PayloadPackage secondPackage = severDiffConnection
+		PayloadMessage secondPackage = severDiffConnection
 				.generateSnapshot(secondStateMessage);
 
 		assertEquals(DiffMessage.class,
@@ -225,7 +225,7 @@ public class SerializationTests {
 		final GameStateMessage2 gameStateMessage = new GameStateMessage2(
 				position, orientation);
 
-		PayloadPackage firstPackage = severDiffConnection
+		PayloadMessage firstPackage = severDiffConnection
 				.generateSnapshot(gameStateMessage);
 
 		assertEquals(GameStateMessage2.class,
@@ -241,7 +241,7 @@ public class SerializationTests {
 		final GameStateMessage2 secondStateMessage = new GameStateMessage2(
 				position, orientation);
 
-		PayloadPackage secondPackage = severDiffConnection
+		PayloadMessage secondPackage = severDiffConnection
 				.generateSnapshot(secondStateMessage);
 
 		assertEquals(GameStateMessage2.class,
@@ -265,7 +265,7 @@ public class SerializationTests {
 				position, orientation);
 
 		// First package; ack
-		PayloadPackage firstPckg = severDiffConnection
+		PayloadMessage firstPckg = severDiffConnection
 				.generateSnapshot(gameStateMessage);
 		severDiffConnection.registerAck(firstPckg.getId());
 

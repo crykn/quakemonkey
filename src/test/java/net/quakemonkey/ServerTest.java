@@ -20,7 +20,7 @@ import com.esotericsoftware.kryonet.Server;
 import net.quakemonkey.ClientDiffHandler;
 import net.quakemonkey.DiffClassRegistration;
 import net.quakemonkey.ServerDiffHandler;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 
 public class ServerTest {
 	private int serverTicks = 0;
@@ -118,7 +118,7 @@ public class ServerTest {
 
 				// Send an old message
 				if (wrongSendIndices.contains(serverTicks)) {
-					server.sendToAllUDP(PayloadPackage.POOL.obtain()
+					server.sendToAllUDP(PayloadMessage.POOL.obtain()
 							.set((short) (serverTicks - 20), newMessage));
 					System.out.println(
 							"Old message " + (serverTicks - 20) + " sent");

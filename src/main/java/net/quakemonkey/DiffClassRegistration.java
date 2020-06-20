@@ -5,7 +5,7 @@ import com.esotericsoftware.kryo.Kryo;
 import net.quakemonkey.messages.AckMessage;
 import net.quakemonkey.messages.DiffMessage;
 import net.quakemonkey.messages.DiffMessageSerializer;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 
 /**
  * Registers messages in the serializer that are required for the snapshot
@@ -28,11 +28,11 @@ public class DiffClassRegistration {
 	 * calls is the same.
 	 * 
 	 * @param kryoSerializer
-	 *            the serializer used by the endpoint.
+	 *            the serializer used by the endpoint
 	 */
 	public static void registerClasses(Kryo kryoSerializer) {
 		kryoSerializer.register(DiffMessage.class, new DiffMessageSerializer());
 		kryoSerializer.register(AckMessage.class);
-		kryoSerializer.register(PayloadPackage.class);
+		kryoSerializer.register(PayloadMessage.class);
 	}
 }

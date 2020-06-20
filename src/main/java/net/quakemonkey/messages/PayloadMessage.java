@@ -3,20 +3,20 @@ package net.quakemonkey.messages;
 import net.quakemonkey.utils.pool.Pool;
 
 /**
- * A package containing a payload message with an identifier.
+ * A message containing a payload with an identifier.
  * 
  * @author Ben Ruijl
  */
-public class PayloadPackage {
-	public static final Pool<PayloadPackage> POOL = new Pool<PayloadPackage>(
-			new Pool.ObjectSupplier<PayloadPackage>() {
+public final class PayloadMessage {
+	public static final Pool<PayloadMessage> POOL = new Pool<PayloadMessage>(
+			new Pool.ObjectSupplier<PayloadMessage>() {
 				@Override
-				public PayloadPackage newInstance() {
-					return new PayloadPackage();
+				public PayloadMessage newInstance() {
+					return new PayloadMessage();
 				}
 
 				@Override
-				public void onFree(PayloadPackage obj) {
+				public void onFree(PayloadMessage obj) {
 					obj.currentId = 0;
 					obj.message = null;
 				}
@@ -25,7 +25,7 @@ public class PayloadPackage {
 	private short currentId;
 	private Object message;
 
-	public PayloadPackage() {
+	public PayloadMessage() {
 		// default public constructor
 	}
 
@@ -52,7 +52,7 @@ public class PayloadPackage {
 	 * @param message
 	 * @return
 	 */
-	public PayloadPackage set(short label, Object message) {
+	public PayloadMessage set(short label, Object message) {
 		this.currentId = label;
 		this.message = message;
 
@@ -61,7 +61,7 @@ public class PayloadPackage {
 
 	@Override
 	public String toString() {
-		return "LabeledMessage { label: " + currentId + ", payloadMessage: "
+		return "PayloadMessage { id: " + currentId + ", payload: "
 				+ message + "}";
 	}
 }

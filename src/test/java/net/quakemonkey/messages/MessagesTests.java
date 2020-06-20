@@ -25,7 +25,7 @@ public class MessagesTests {
 				diffMessage.toString());
 
 		// LabeledMessage
-		PayloadPackage labeledMessage = new PayloadPackage();
+		PayloadMessage labeledMessage = new PayloadMessage();
 		labeledMessage.set((short) 23, "testabc");
 		assertEquals("LabeledMessage { label: 23, payloadMessage: testabc}",
 				labeledMessage.toString());

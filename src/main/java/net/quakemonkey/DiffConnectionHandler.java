@@ -10,7 +10,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import net.quakemonkey.messages.DiffMessage;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 import net.quakemonkey.utils.Utils;
 import net.quakemonkey.utils.pool.BufferPool;
 
@@ -78,7 +78,7 @@ public class DiffConnectionHandler<T> {
 	 * @return {@code message} or a delta message
 	 */
 	@VisibleForTesting
-	PayloadPackage generateSnapshot(T message) {
+	PayloadMessage generateSnapshot(T message) {
 		short oldPos = curPos;
 		curPos++;
 
@@ -94,7 +94,7 @@ public class DiffConnectionHandler<T> {
 			LOG.log(Level.INFO,
 					"The last acknowledged message is too old; sending a full one");
 
-			return PayloadPackage.POOL.obtain().set(oldPos, message);
+			return PayloadMessage.POOL.obtain().set(oldPos, message);
 		}
 
 		/* Send a normal diff message */
@@ -106,7 +106,7 @@ public class DiffConnectionHandler<T> {
 		// (because of Kryo's serialization)
 		Object delta = generateDelta(newMessage, lastAckMessage, ackPos);
 
-		return PayloadPackage.POOL.obtain().set(oldPos,
+		return PayloadMessage.POOL.obtain().set(oldPos,
 				delta == null ? message : delta);
 	}
 

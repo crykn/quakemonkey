@@ -14,7 +14,7 @@ import com.esotericsoftware.kryonet.Server;
 import net.quakemonkey.ClientDiffHandler;
 import net.quakemonkey.DiffConnectionHandler;
 import net.quakemonkey.ServerDiffHandler;
-import net.quakemonkey.messages.PayloadPackage;
+import net.quakemonkey.messages.PayloadMessage;
 
 public class DiffHandlerTests {
 
@@ -47,7 +47,7 @@ public class DiffHandlerTests {
 		diff.addListener(b);
 		diff.removeListener(b);
 
-		PayloadPackage q = new PayloadPackage();
+		PayloadMessage q = new PayloadMessage();
 		q.set((short) 0, "testString");
 
 		diff.processPackage(new FakeClient(), q);
